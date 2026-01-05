@@ -139,14 +139,18 @@ class VideoManager {
                         const videoTrack = this.localStream.getVideoTracks()[0];
                         const audioTrack = this.localStream.getAudioTracks()[0];
 
+                        let needsRenegotiation = false;
+
                         // Replace video track
                         const videoSender = senders.find(s => s.track?.kind === 'video');
                         if (videoSender) {
                             console.log('  - Replacing video track');
                             await videoSender.replaceTrack(videoTrack);
+                            needsRenegotiation = true;
                         } else {
                             console.log('  - Adding new video track');
                             pc.addTrack(videoTrack, this.localStream);
+                            needsRenegotiation = true;
                         }
 
                         // Replace audio track
@@ -154,9 +158,20 @@ class VideoManager {
                         if (audioSender) {
                             console.log('  - Replacing audio track');
                             await audioSender.replaceTrack(audioTrack);
+                            needsRenegotiation = true;
                         } else {
                             console.log('  - Adding new audio track');
                             pc.addTrack(audioTrack, this.localStream);
+                            needsRenegotiation = true;
+                        }
+
+                        // Create and send new offer to signal track changes
+                        if (needsRenegotiation) {
+                            console.log('  - Creating new offer for renegotiation');
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            this.socketManager.sendWebRTCOffer(userId, offer);
+                            console.log(`  ✅ Renegotiation offer sent to ${userId}`);
                         }
 
                         console.log(`  ✅ Tracks replaced for ${userId}`);
