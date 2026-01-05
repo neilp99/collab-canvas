@@ -147,9 +147,9 @@ class VideoManager {
                         // Replace video track
                         const videoSender = senders.find(s => s.track?.kind === 'video');
                         if (videoSender) {
-                            console.log('  - Replacing video track');
+                            console.log('  - Replacing video track (no renegotiation needed)');
                             await videoSender.replaceTrack(videoTrack);
-                            needsRenegotiation = true;
+                            // replaceTrack() doesn't need renegotiation
                         } else {
                             console.log('  - Adding new video track');
                             pc.addTrack(videoTrack, this.localStream);
@@ -159,9 +159,9 @@ class VideoManager {
                         // Replace audio track
                         const audioSender = senders.find(s => s.track?.kind === 'audio');
                         if (audioSender) {
-                            console.log('  - Replacing audio track');
+                            console.log('  - Replacing audio track (no renegotiation needed)');
                             await audioSender.replaceTrack(audioTrack);
-                            needsRenegotiation = true;
+                            // replaceTrack() doesn't need renegotiation
                         } else {
                             console.log('  - Adding new audio track');
                             pc.addTrack(audioTrack, this.localStream);
