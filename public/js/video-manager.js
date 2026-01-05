@@ -59,15 +59,13 @@ class VideoManager {
 
         // Handle user camera enabled
         this.socketManager.on('user-camera-enabled', async ({ userId }) => {
-            console.log('User camera enabled:', userId);
-            // If we also have camera enabled, create a connection
-            // Use socket ID comparison to ensure only one creates the offer
-            if (this.localStream && this.socketManager.socket.id > userId) {
-                console.log('Creating peer connection (we have higher ID)');
-                if (!this.peerConnections.has(userId)) {
-                    await this.createPeerConnection(userId);
-                }
-            }
+            console.log('[VideoManager] 📹 User camera enabled:', userId);
+            console.log(`  - We have camera: ${!!this.localStream}`);
+            console.log(`  - Already has connection: ${this.peerConnections.has(userId)}`);
+
+            // Don't create connection here - the user who enabled camera will initiate
+            // We'll respond via handleOffer when they send us an offer
+            console.log('[VideoManager] ⏭️ Waiting for offer from user who enabled camera');
         });
 
         // Handle user camera disabled - remove their video
@@ -120,23 +118,26 @@ class VideoManager {
 
             // Notify other users that camera is enabled
             this.socketManager.sendCameraEnabled();
+            console.log('[VideoManager] Broadcasted camera-enabled event');
 
-            // Create peer connections to all existing users with lower socket IDs
-            // Users with higher IDs will create connections to us when they receive our broadcast
+            // Create peer connections to ALL existing users (regardless of socket ID)
+            // This ensures bidirectional connections
             const app = window.app;
             if (app && app.connectedUsers) {
+                console.log('[VideoManager] Connected users:', Array.from(app.connectedUsers));
+                console.log('[VideoManager] My socket ID:', this.socketManager.socket.id);
+
                 for (const userId of app.connectedUsers) {
-                    // Only create connection if we have higher socket ID (to avoid duplicates)
-                    if (!this.peerConnections.has(userId) && this.socketManager.socket.id > userId) {
-                        console.log('Creating peer connection to:', userId, '(we have higher ID)');
+                    if (!this.peerConnections.has(userId)) {
+                        console.log(`[VideoManager] ✅ Creating peer connection to: ${userId}`);
                         await this.createPeerConnection(userId);
                     } else {
-                        console.log('Skipping connection to:', userId, '(they will connect to us)');
+                        console.log(`[VideoManager] ⏭️ Connection already exists to: ${userId}`);
                     }
                 }
+            } else {
+                console.warn('[VideoManager] No connected users found or app not initialized');
             }
-
-            showToast(useMockVideo ? 'Camera enabled (Test Mode)' : 'Camera enabled', 'success');
             return true;
         } catch (error) {
             console.error('Error enabling camera:', error);
