@@ -120,24 +120,42 @@ class VideoManager {
             this.socketManager.sendCameraEnabled();
             console.log('[VideoManager] Broadcasted camera-enabled event');
 
-            // Create peer connections to ALL existing users (regardless of socket ID)
-            // This ensures bidirectional connections
+            // Handle peer connections for all existing users
             const app = window.app;
             if (app && app.connectedUsers) {
                 console.log('[VideoManager] Connected users:', Array.from(app.connectedUsers));
                 console.log('[VideoManager] My socket ID:', this.socketManager.socket.id);
 
                 for (const userId of app.connectedUsers) {
-                    if (!this.peerConnections.has(userId)) {
-                        console.log(`[VideoManager] ✅ Creating peer connection to: ${userId}`);
-                        await this.createPeerConnection(userId);
+                    const existingConnection = this.peerConnections.has(userId);
+
+                    if (existingConnection) {
+                        // Connection exists - add our new tracks to it
+                        console.log(`[VideoManager] 🔄 Adding tracks to existing connection: ${userId}`);
+                        const pc = this.peerConnections.get(userId);
+
+                        // Add new tracks from our stream
+                        this.localStream.getTracks().forEach(track => {
+                            console.log(`  - Adding ${track.kind} track`);
+                            pc.addTrack(track, this.localStream);
+                        });
+
+                        // Create new offer since we added tracks
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        this.socketManager.sendWebRTCOffer(userId, offer);
+                        console.log(`  - Sent new offer to ${userId}`);
                     } else {
-                        console.log(`[VideoManager] ⏭️ Connection already exists to: ${userId}`);
+                        // No connection - create new one
+                        console.log(`[VideoManager] ✅ Creating new peer connection to: ${userId}`);
+                        await this.createPeerConnection(userId);
                     }
                 }
             } else {
                 console.warn('[VideoManager] No connected users found or app not initialized');
             }
+
+            showToast(useMockVideo ? 'Camera enabled (Test Mode)' : 'Camera enabled', 'success');
             return true;
         } catch (error) {
             console.error('Error enabling camera:', error);
