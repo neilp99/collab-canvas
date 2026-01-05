@@ -219,6 +219,7 @@ class VideoManager {
     // Disable camera
     disableCamera() {
         if (this.localStream) {
+            // Stop all local tracks (camera and microphone)
             this.localStream.getTracks().forEach(track => track.stop());
             this.localStream = null;
         }
@@ -226,15 +227,23 @@ class VideoManager {
         this.cameraEnabled = false;
         this.micEnabled = false;
 
-        // Remove local video
+        // Remove local video tile only
         this.removeLocalVideo();
 
         // Notify other users that camera is disabled
         this.socketManager.sendCameraDisabled();
 
-        // Close all peer connections
+        // DON'T close peer connections - we want to keep receiving remote videos!
+        // Just remove our tracks from the connections
         this.peerConnections.forEach((pc, userId) => {
-            this.closePeerConnection(userId);
+            // Get all senders (our tracks in the connection)
+            const senders = pc.getSenders();
+            senders.forEach(sender => {
+                // Remove our tracks from the connection
+                if (sender.track) {
+                    pc.removeTrack(sender);
+                }
+            });
         });
 
         this.updateGridLayout();
