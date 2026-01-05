@@ -68,10 +68,13 @@ class VideoManager {
             console.log('[VideoManager] ⏭️ Waiting for offer from user who enabled camera');
         });
 
-        // Handle user camera disabled - remove their video
+        // Handle user camera disabled - remove their video tile only
         this.socketManager.on('user-camera-disabled', ({ userId }) => {
-            console.log('User camera disabled:', userId);
-            this.closePeerConnection(userId);
+            console.log('[VideoManager] 📹 User camera disabled:', userId);
+            // Just remove their video tile, keep the connection alive
+            // This allows us to continue sending our video to them
+            this.removeRemoteVideo(userId);
+            console.log('[VideoManager] ✅ Removed video tile, connection kept alive');
         });
     }
 
