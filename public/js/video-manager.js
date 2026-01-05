@@ -130,21 +130,36 @@ class VideoManager {
                     const existingConnection = this.peerConnections.has(userId);
 
                     if (existingConnection) {
-                        // Connection exists - add our new tracks to it
-                        console.log(`[VideoManager] 🔄 Adding tracks to existing connection: ${userId}`);
+                        // Connection exists - replace old tracks with new ones
+                        console.log(`[VideoManager] 🔄 Replacing tracks in existing connection: ${userId}`);
                         const pc = this.peerConnections.get(userId);
 
-                        // Add new tracks from our stream
-                        this.localStream.getTracks().forEach(track => {
-                            console.log(`  - Adding ${track.kind} track`);
-                            pc.addTrack(track, this.localStream);
-                        });
+                        // Get existing senders
+                        const senders = pc.getSenders();
+                        const videoTrack = this.localStream.getVideoTracks()[0];
+                        const audioTrack = this.localStream.getAudioTracks()[0];
 
-                        // Create new offer since we added tracks
-                        const offer = await pc.createOffer();
-                        await pc.setLocalDescription(offer);
-                        this.socketManager.sendWebRTCOffer(userId, offer);
-                        console.log(`  - Sent new offer to ${userId}`);
+                        // Replace video track
+                        const videoSender = senders.find(s => s.track?.kind === 'video');
+                        if (videoSender) {
+                            console.log('  - Replacing video track');
+                            await videoSender.replaceTrack(videoTrack);
+                        } else {
+                            console.log('  - Adding new video track');
+                            pc.addTrack(videoTrack, this.localStream);
+                        }
+
+                        // Replace audio track
+                        const audioSender = senders.find(s => s.track?.kind === 'audio');
+                        if (audioSender) {
+                            console.log('  - Replacing audio track');
+                            await audioSender.replaceTrack(audioTrack);
+                        } else {
+                            console.log('  - Adding new audio track');
+                            pc.addTrack(audioTrack, this.localStream);
+                        }
+
+                        console.log(`  ✅ Tracks replaced for ${userId}`);
                     } else {
                         // No connection - create new one
                         console.log(`[VideoManager] ✅ Creating new peer connection to: ${userId}`);
