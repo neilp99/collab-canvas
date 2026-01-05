@@ -238,7 +238,11 @@ class VideoManager {
     disableCamera() {
         if (this.localStream) {
             // Stop all local tracks (camera and microphone)
-            this.localStream.getTracks().forEach(track => track.stop());
+            // This stops sending but keeps the peer connection alive
+            this.localStream.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
             this.localStream = null;
         }
 
@@ -251,18 +255,8 @@ class VideoManager {
         // Notify other users that camera is disabled
         this.socketManager.sendCameraDisabled();
 
-        // DON'T close peer connections - we want to keep receiving remote videos!
-        // Just remove our tracks from the connections
-        this.peerConnections.forEach((pc, userId) => {
-            // Get all senders (our tracks in the connection)
-            const senders = pc.getSenders();
-            senders.forEach(sender => {
-                // Remove our tracks from the connection
-                if (sender.track) {
-                    pc.removeTrack(sender);
-                }
-            });
-        });
+        // Keep peer connections alive - just stop sending data
+        // The remote side will stop receiving our video but keep sending theirs
 
         this.updateGridLayout();
         showToast('Camera disabled', 'info');
