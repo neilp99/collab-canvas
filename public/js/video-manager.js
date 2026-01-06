@@ -60,12 +60,19 @@ class VideoManager {
         // Handle user camera enabled
         this.socketManager.on('user-camera-enabled', async ({ userId }) => {
             console.log('[VideoManager] 📹 User camera enabled:', userId);
-            console.log(`  - We have camera: ${!!this.localStream}`);
+            console.log(`  - We have camera: ${!!this.localStream}`)
             console.log(`  - Already has connection: ${this.peerConnections.has(userId)}`);
 
-            // Don't create connection here - the user who enabled camera will initiate
-            // We'll respond via handleOffer when they send us an offer
-            console.log('[VideoManager] ⏭️ Waiting for offer from user who enabled camera');
+            // If we already have a connection but no video tile, prepare for incoming video
+            if (this.peerConnections.has(userId)) {
+                const existingTile = document.getElementById(`video-${userId}`);
+                if (!existingTile) {
+                    console.log('[VideoManager] 📹 Connection exists but no tile - will create when tracks arrive');
+                    // The ontrack handler will create the tile when video arrives
+                }
+            }
+
+            console.log('[VideoManager] ⏭️ Waiting for video tracks from user');
         });
 
         // Handle user camera disabled - remove their video tile only
@@ -169,13 +176,12 @@ class VideoManager {
                         }
 
                         // Create and send new offer to signal track changes
-                        if (needsRenegotiation) {
-                            console.log('  - Creating new offer for renegotiation');
-                            const offer = await pc.createOffer();
-                            await pc.setLocalDescription(offer);
-                            this.socketManager.sendWebRTCOffer(userId, offer);
-                            console.log(`  ✅ Renegotiation offer sent to ${userId}`);
-                        }
+                        // Always renegotiate when re-enabling camera to ensure remote gets tracks
+                        console.log('  - Creating new offer for renegotiation');
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        this.socketManager.sendWebRTCOffer(userId, offer);
+                        console.log(`  ✅ Renegotiation offer sent to ${userId}`);
 
                         console.log(`  ✅ Tracks replaced for ${userId}`);
                     } else {
@@ -268,28 +274,46 @@ class VideoManager {
     }
 
     // Disable camera
-    disableCamera() {
+    async disableCamera() {
         if (this.localStream) {
-            // Stop all local tracks (camera and microphone)
-            // This stops sending but keeps the peer connection alive
+            // Stop all local tracks
             this.localStream.getTracks().forEach(track => {
                 track.stop();
-                track.enabled = false;
             });
+
+            // Remove tracks from all peer connections and renegotiate
+            for (const [userId, pc] of this.peerConnections) {
+                const senders = pc.getSenders();
+
+                // Remove all senders (video and audio tracks)
+                for (const sender of senders) {
+                    if (sender.track) {
+                        pc.removeTrack(sender);
+                    }
+                }
+
+                // Create and send new offer to signal track removal
+                try {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    this.socketManager.sendWebRTCOffer(userId, offer);
+                    console.log(`[disableCamera] Sent renegotiation offer to ${userId} (tracks removed)`);
+                } catch (error) {
+                    console.error(`[disableCamera] Error renegotiating with ${userId}:`, error);
+                }
+            }
+
             this.localStream = null;
         }
 
         this.cameraEnabled = false;
         this.micEnabled = false;
 
-        // Remove local video tile only
+        // Remove local video tile
         this.removeLocalVideo();
 
         // Notify other users that camera is disabled
         this.socketManager.sendCameraDisabled();
-
-        // Keep peer connections alive - just stop sending data
-        // The remote side will stop receiving our video but keep sending theirs
 
         this.updateGridLayout();
         showToast('Camera disabled', 'info');
