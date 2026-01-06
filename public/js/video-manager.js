@@ -338,17 +338,23 @@ class VideoManager {
         pc.ontrack = (event) => {
             console.log('Received remote track from:', userId, 'kind:', event.track.kind);
 
-            // Only add video tile if we receive a video track and don't already have one
             if (event.track.kind === 'video') {
-                const existingTile = document.getElementById(`video-${userId}`);
-                if (existingTile) {
-                    console.log('Video tile already exists for user:', userId);
-                    return;
-                }
-
                 const remoteStream = event.streams[0];
                 this.remoteStreams.set(userId, remoteStream);
-                this.addRemoteVideo(userId, remoteStream);
+
+                const existingTile = document.getElementById(`video-${userId}`);
+                if (existingTile) {
+                    // Update existing video element with new stream
+                    console.log('Updating existing video tile for user:', userId);
+                    const videoElement = existingTile.querySelector('video');
+                    if (videoElement) {
+                        videoElement.srcObject = remoteStream;
+                    }
+                } else {
+                    // Create new video tile
+                    console.log('Creating new video tile for user:', userId);
+                    this.addRemoteVideo(userId, remoteStream);
+                }
             } else if (event.track.kind === 'audio') {
                 // Setup audio analysis for audio track
                 const remoteStream = event.streams[0];
@@ -392,17 +398,23 @@ class VideoManager {
         pc.ontrack = (event) => {
             console.log('Received remote track from:', userId, 'kind:', event.track.kind);
 
-            // Only add video tile if we receive a video track and don't already have one
             if (event.track.kind === 'video') {
-                const existingTile = document.getElementById(`video-${userId}`);
-                if (existingTile) {
-                    console.log('Video tile already exists for user:', userId);
-                    return;
-                }
-
                 const remoteStream = event.streams[0];
                 this.remoteStreams.set(userId, remoteStream);
-                this.addRemoteVideo(userId, remoteStream);
+
+                const existingTile = document.getElementById(`video-${userId}`);
+                if (existingTile) {
+                    // Update existing video element with new stream
+                    console.log('Updating existing video tile for user:', userId);
+                    const videoElement = existingTile.querySelector('video');
+                    if (videoElement) {
+                        videoElement.srcObject = remoteStream;
+                    }
+                } else {
+                    // Create new video tile
+                    console.log('Creating new video tile for user:', userId);
+                    this.addRemoteVideo(userId, remoteStream);
+                }
             } else if (event.track.kind === 'audio') {
                 // Setup audio analysis for audio track
                 const remoteStream = event.streams[0];
