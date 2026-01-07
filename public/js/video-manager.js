@@ -366,6 +366,12 @@ class VideoManager {
                 const remoteStream = event.streams[0];
                 this.remoteStreams.set(userId, remoteStream);
 
+                // Listen for track ended event to remove video tile
+                event.track.onended = () => {
+                    console.log('[createPeerConnection] Video track ended for:', userId);
+                    this.removeRemoteVideo(userId);
+                };
+
                 const existingTile = document.getElementById(`video-${userId}`);
                 if (existingTile) {
                     // Update existing video element with new stream
@@ -425,6 +431,12 @@ class VideoManager {
             if (event.track.kind === 'video') {
                 const remoteStream = event.streams[0];
                 this.remoteStreams.set(userId, remoteStream);
+
+                // Listen for track ended event to remove video tile
+                event.track.onended = () => {
+                    console.log('[handleOffer] Video track ended for:', userId);
+                    this.removeRemoteVideo(userId);
+                };
 
                 const existingTile = document.getElementById(`video-${userId}`);
                 if (existingTile) {
