@@ -7,6 +7,7 @@ class App {
         this.videoManager = null;
         this.remoteCursors = new Map();
         this.connectedUsers = new Set(); // Track all connected users
+        this.roomPassword = null; // Store room password for copy link
 
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
@@ -55,7 +56,9 @@ class App {
         const joinBtn = document.getElementById('join-room-btn');
         const enterBtn = document.getElementById('enter-room-btn');
         const roomIdInput = document.getElementById('room-id-input');
+        const roomPasswordInput = document.getElementById('room-password-input');
         const usernameInput = document.getElementById('username-input');
+        const togglePasswordBtn = document.getElementById('toggle-password-btn');
 
         // Create room button
         createBtn.addEventListener('click', () => {
@@ -65,8 +68,14 @@ class App {
         // Join room button
         joinBtn.addEventListener('click', () => {
             const roomId = roomIdInput.value.trim().toUpperCase();
+            const password = roomPasswordInput.value.trim().toUpperCase();
+
             if (roomId.length === 6) {
-                this.showUserInfo();
+                if (password.length === 6) {
+                    this.showUserInfo();
+                } else {
+                    showToast('Please enter the 6-character room password', 'error');
+                }
             } else {
                 showToast('Please enter a valid 6-character room ID', 'error');
             }
@@ -76,12 +85,20 @@ class App {
         enterBtn.addEventListener('click', () => {
             const username = usernameInput.value.trim() || 'User';
             const roomId = roomIdInput.value.trim().toUpperCase();
+            const password = roomPasswordInput.value.trim().toUpperCase();
 
             if (roomId) {
-                this.joinRoom(roomId, username);
+                this.joinRoom(roomId, username, password);
             } else {
                 this.createRoom(username);
             }
+        });
+
+        // Toggle password visibility
+        togglePasswordBtn.addEventListener('click', () => {
+            const passwordInput = document.getElementById('created-password');
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
         });
 
         // Allow Enter key to proceed
@@ -92,6 +109,12 @@ class App {
         });
 
         roomIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinBtn.click();
+            }
+        });
+
+        roomPasswordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 joinBtn.click();
             }
@@ -108,17 +131,65 @@ class App {
         this.socketManager.createRoom(username);
     }
 
-    joinRoom(roomId, username) {
-        this.socketManager.joinRoom(roomId, username);
+    joinRoom(roomId, username, password) {
+        this.socketManager.joinRoom(roomId, username, password);
+    }
+
+    leaveRoom() {
+        if (confirm('Are you sure you want to leave this room?')) {
+            // Stop video/audio
+            if (this.videoManager) {
+                this.videoManager.cleanup();
+            }
+
+            // Leave room via socket
+            this.socketManager.leaveRoom();
+
+            // Reset state
+            this.canvasManager = null;
+            this.videoManager = null;
+            this.connectedUsers.clear();
+            this.remoteCursors.clear();
+            this.roomPassword = null;
+
+            // Clear UI
+            document.getElementById('cursors-overlay').innerHTML = '';
+            document.getElementById('video-grid').innerHTML = '';
+
+            // Show connection modal
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('connection-modal').style.display = 'flex';
+
+            // Reset modal state
+            document.querySelector('.connection-options').style.display = 'flex';
+            document.querySelector('.user-info-section').style.display = 'none';
+            document.querySelector('.room-password-section').style.display = 'none';
+            document.getElementById('room-id-input').value = '';
+            document.getElementById('room-password-input').value = '';
+            document.getElementById('username-input').value = '';
+
+            // Update URL
+            window.history.pushState({}, '', window.location.pathname);
+
+            showToast('Left the room', 'info');
+        }
     }
 
     setupSocketListeners() {
         // Room created
         this.socketManager.on('room-created', (data) => {
             console.log('Room created:', data.roomId);
+            this.roomPassword = data.password;
             updateUrl(data.roomId);
             this.startApplication(data.roomId);
             this.updateUsersCount();
+
+            // Show password to creator
+            const passwordSection = document.querySelector('.room-password-section');
+            const createdPasswordInput = document.getElementById('created-password');
+            createdPasswordInput.value = data.password;
+            passwordSection.style.display = 'block';
+
             showToast(`Room created: ${data.roomId}`, 'success');
         });
 
@@ -273,12 +344,23 @@ class App {
         document.getElementById('copy-link-btn').addEventListener('click', async () => {
             const roomId = this.socketManager.getCurrentRoom();
             const url = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-            const success = await copyToClipboard(url);
+
+            let textToCopy = `🎨 Join my CollabCanvas room!\n\nRoom: ${url}`;
+            if (this.roomPassword) {
+                textToCopy += `\nPassword: ${this.roomPassword}`;
+            }
+
+            const success = await copyToClipboard(textToCopy);
             if (success) {
-                showToast('Room link copied to clipboard!', 'success');
+                showToast('Room link and password copied!', 'success');
             } else {
                 showToast('Failed to copy link', 'error');
             }
+        });
+
+        // Leave room button
+        document.getElementById('leave-room-btn').addEventListener('click', () => {
+            this.leaveRoom();
         });
 
         // Toggle camera

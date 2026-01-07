@@ -109,14 +109,22 @@ class SocketManager {
         this.socket.emit('create-room', userData);
     }
 
-    // Join an existing room
-    joinRoom(roomId, username) {
+    // Join a room
+    joinRoom(roomId, username, password) {
         const userData = {
             name: username || 'User',
-            color: getRandomColor()
+            joinedAt: Date.now()
         };
+        this.currentRoom = roomId;
+        this.socket.emit('join-room', { roomId, password, userData });
+    }
 
-        this.socket.emit('join-room', { roomId, userData });
+    // Leave current room
+    leaveRoom() {
+        if (this.currentRoom) {
+            this.socket.emit('leave-room');
+            this.currentRoom = null;
+        }
     }
 
     // Send canvas object added event

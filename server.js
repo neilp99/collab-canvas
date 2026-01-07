@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
     // Create a new room
     socket.on('create-room', (userData) => {
         const roomId = generateRoomId();
+        const password = generateRoomPassword();
         currentRoom = roomId;
         currentUser = { id: socket.id, ...userData };
 
@@ -36,19 +37,26 @@ io.on('connection', (socket) => {
         rooms.set(roomId, {
             users: new Map([[socket.id, currentUser]]),
             canvasState: { objects: [], theme: 'dark', canvasColor: '#1a1a1a' },
+            password: password,
             createdAt: Date.now()
         });
 
-        socket.emit('room-created', { roomId, user: currentUser });
-        console.log(`Room created: ${roomId} by ${socket.id}`);
+        socket.emit('room-created', { roomId, password, user: currentUser });
+        console.log(`Room created: ${roomId} with password by ${socket.id}`);
     });
 
     // Join an existing room
-    socket.on('join-room', ({ roomId, userData }) => {
+    socket.on('join-room', ({ roomId, password, userData }) => {
         const room = rooms.get(roomId);
 
         if (!room) {
             socket.emit('error', { message: 'Room not found' });
+            return;
+        }
+
+        // Validate password
+        if (room.password !== password) {
+            socket.emit('error', { message: 'Incorrect password' });
             return;
         }
 
@@ -191,6 +199,31 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Leave room
+    socket.on('leave-room', () => {
+        console.log(`User ${socket.id} leaving room ${currentRoom}`);
+
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room) {
+                room.users.delete(socket.id);
+
+                // Notify other users
+                socket.to(currentRoom).emit('user-left', { userId: socket.id });
+
+                // Clean up empty rooms
+                if (room.users.size === 0) {
+                    rooms.delete(currentRoom);
+                    console.log(`Room ${currentRoom} deleted (empty)`);
+                }
+            }
+
+            socket.leave(currentRoom);
+            currentRoom = null;
+            currentUser = null;
+        }
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
@@ -216,6 +249,16 @@ io.on('connection', (socket) => {
 // Generate a unique 6-character room ID
 function generateRoomId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Generate a secure 6-character room password
+function generateRoomPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let password = '';
+    for (let i = 0; i < 6; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
 }
 
 const PORT = process.env.PORT || 3000;
