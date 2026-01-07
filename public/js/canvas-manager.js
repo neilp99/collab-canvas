@@ -14,6 +14,8 @@ class CanvasManager {
         this.currentTool = 'pen';
         this.currentColor = '#ff6b6b';
         this.currentWidth = 3;
+        this.currentTheme = 'dark';
+        this.currentCanvasColor = '#1a1a1a';
         this.isReceivingRemoteChanges = false;
 
         // Resize canvas to fill container
@@ -94,7 +96,9 @@ class CanvasManager {
         } else if (tool === 'eraser') {
             this.canvas.isDrawingMode = true;
             this.canvas.selection = false;
-            this.canvas.freeDrawingBrush.color = '#1a1a1a'; // Match canvas background
+            // Set eraser color based on current theme
+            const eraserColor = this.currentTheme === 'light' ? '#f5f5f5' : '#1a1a1a';
+            this.canvas.freeDrawingBrush.color = eraserColor;
             this.canvas.freeDrawingBrush.width = this.currentWidth * 3;
         } else if (tool === 'sticky') {
             this.canvas.isDrawingMode = false;
@@ -117,6 +121,190 @@ class CanvasManager {
             this.canvas.freeDrawingBrush.width = width;
         } else if (this.currentTool === 'eraser') {
             this.canvas.freeDrawingBrush.width = width * 3;
+        }
+    }
+
+    // Set canvas theme
+    setTheme(theme, color = null) {
+        this.currentTheme = theme;
+        if (color) {
+            this.currentCanvasColor = color;
+        }
+        this.applyTheme();
+
+        // Update eraser color if currently using eraser
+        if (this.currentTool === 'eraser') {
+            const eraserColor = this.isLightColor(this.currentCanvasColor) ? this.currentCanvasColor : (theme === 'light' ? '#f5f5f5' : '#1a1a1a');
+            this.canvas.freeDrawingBrush.color = eraserColor;
+        }
+
+        // Send theme change to other users
+        this.socketManager.sendThemeChange(theme, this.currentCanvasColor);
+    }
+
+    // Set canvas color
+    setCanvasColor(color) {
+        this.currentCanvasColor = color;
+        this.applyTheme();
+
+        // Update eraser color if currently using eraser
+        if (this.currentTool === 'eraser') {
+            const eraserColor = this.isLightColor(color) ? color : '#1a1a1a';
+            this.canvas.freeDrawingBrush.color = eraserColor;
+        }
+
+        // Send theme change to other users
+        this.socketManager.sendThemeChange(this.currentTheme, color);
+    }
+
+    // Check if a color is light
+    isLightColor(color) {
+        // Convert hex to RGB
+        const hex = color.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        // Calculate brightness
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 128;
+    }
+
+    // Apply theme rendering
+    applyTheme() {
+        // Clear any existing patterns
+        this.canvas.overlayImage = null;
+        this.canvas.backgroundImage = null;
+
+        // Set background color
+        this.canvas.backgroundColor = this.currentCanvasColor || '#1a1a1a';
+
+        switch (this.currentTheme) {
+            case 'grid':
+                this.drawGridPattern();
+                break;
+
+            case 'dotted':
+                this.drawDottedPattern();
+                break;
+        }
+
+        this.canvas.renderAll();
+    }
+
+    // Draw grid pattern  
+    drawGridPattern() {
+        const gridSize = 40;
+        const canvas = this.canvas;
+
+        // Create pattern using canvas context
+        const patternCanvas = document.createElement('canvas');
+        patternCanvas.width = canvas.width;
+        patternCanvas.height = canvas.height;
+        const ctx = patternCanvas.getContext('2d');
+
+        // Determine grid color based on background
+        const isLight = this.isLightColor(this.currentCanvasColor || '#1a1a1a');
+        const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+
+        // Draw vertical lines
+        for (let x = 0; x <= canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        // Draw horizontal lines
+        for (let y = 0; y <= canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Apply as overlay
+        fabric.Image.fromURL(patternCanvas.toDataURL(), (img) => {
+            img.set({
+                selectable: false,
+                evented: false
+            });
+            canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+        });
+    }
+
+    // Draw dotted pattern
+    drawDottedPattern() {
+        const dotSpacing = 25;
+        const dotRadius = 1.5;
+        const canvas = this.canvas;
+
+        // Create pattern using canvas context
+        const patternCanvas = document.createElement('canvas');
+        patternCanvas.width = canvas.width;
+        patternCanvas.height = canvas.height;
+        const ctx = patternCanvas.getContext('2d');
+
+        // Determine dot color based on background
+        const isLight = this.isLightColor(this.currentCanvasColor || '#1a1a1a');
+        const dotColor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+
+        ctx.fillStyle = dotColor;
+
+        // Draw dots
+        for (let x = 0; x <= canvas.width; x += dotSpacing) {
+            for (let y = 0; y <= canvas.height; y += dotSpacing) {
+                ctx.beginPath();
+                ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Apply as overlay
+        fabric.Image.fromURL(patternCanvas.toDataURL(), (img) => {
+            img.set({
+                selectable: false,
+                evented: false
+            });
+            canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+        });
+    }
+
+    // Apply remote theme change
+    applyRemoteThemeChange(theme, color) {
+        this.currentTheme = theme;
+        if (color) {
+            this.currentCanvasColor = color;
+        }
+        this.applyTheme();
+
+        // Update eraser color if currently using eraser
+        if (this.currentTool === 'eraser') {
+            const eraserColor = this.isLightColor(this.currentCanvasColor) ? this.currentCanvasColor : '#1a1a1a';
+            this.canvas.freeDrawingBrush.color = eraserColor;
+        }
+
+        // Update theme selector in UI
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) {
+            themeSelect.value = theme;
+        }
+
+        // Update canvas color in UI
+        if (color) {
+            const canvasColorInput = document.getElementById('canvas-color-input');
+            if (canvasColorInput) {
+                canvasColorInput.value = color;
+            }
+            // Update active color preset
+            document.querySelectorAll('.canvas-color-preset').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.canvasColor === color) {
+                    btn.classList.add('active');
+                }
+            });
         }
     }
 
@@ -170,8 +358,7 @@ class CanvasManager {
     clear() {
         this.isReceivingRemoteChanges = true;
         this.canvas.clear();
-        this.canvas.backgroundColor = '#1a1a1a';
-        this.canvas.renderAll();
+        this.applyTheme(); // Reapply current theme
         this.isReceivingRemoteChanges = false;
         this.socketManager.sendCanvasClear();
     }
@@ -229,25 +416,57 @@ class CanvasManager {
     applyRemoteClear() {
         this.isReceivingRemoteChanges = true;
         this.canvas.clear();
-        this.canvas.backgroundColor = '#1a1a1a';
-        this.canvas.renderAll();
+        this.applyTheme(); // Reapply current theme
         this.isReceivingRemoteChanges = false;
     }
 
     // Load canvas state (for joining existing room)
     loadCanvasState(state) {
-        if (!state || !state.objects || state.objects.length === 0) return;
-
         this.isReceivingRemoteChanges = true;
 
-        const objectsData = state.objects.map(obj => obj.data);
-        fabric.util.enlivenObjects(objectsData, (objects) => {
-            objects.forEach((obj, index) => {
-                obj.id = state.objects[index].id;
-                this.canvas.add(obj);
+        // Load theme and color if provided
+        if (state.theme) {
+            this.currentTheme = state.theme;
+            if (state.canvasColor) {
+                this.currentCanvasColor = state.canvasColor;
+            }
+            this.applyTheme();
+
+            // Update theme selector in UI
+            const themeSelect = document.getElementById('theme-select');
+            if (themeSelect) {
+                themeSelect.value = state.theme;
+            }
+
+            // Update canvas color in UI
+            if (state.canvasColor) {
+                const canvasColorInput = document.getElementById('canvas-color-input');
+                if (canvasColorInput) {
+                    canvasColorInput.value = state.canvasColor;
+                }
+                // Update active color preset
+                document.querySelectorAll('.canvas-color-preset').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.canvasColor === state.canvasColor) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // Load objects if any
+        if (state.objects && state.objects.length > 0) {
+            const objectsData = state.objects.map(obj => obj.data);
+            fabric.util.enlivenObjects(objectsData, (objects) => {
+                objects.forEach((obj, index) => {
+                    obj.id = state.objects[index].id;
+                    this.canvas.add(obj);
+                });
+                this.canvas.renderAll();
+                this.isReceivingRemoteChanges = false;
             });
-            this.canvas.renderAll();
+        } else {
             this.isReceivingRemoteChanges = false;
-        });
+        }
     }
 }

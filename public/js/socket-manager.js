@@ -70,6 +70,11 @@ class SocketManager {
             this.trigger('cursor:position', data);
         });
 
+        // Theme change event
+        this.socket.on('theme-change', (data) => {
+            this.trigger('theme-change', data);
+        });
+
         // User camera enabled event
         this.socket.on('user-camera-enabled', (data) => {
             this.trigger('user-camera-enabled', data);
@@ -138,6 +143,11 @@ class SocketManager {
     sendCursorPosition = throttle((x, y) => {
         this.socket.emit('cursor:position', { x, y });
     }, 16); // ~60fps
+
+    // Send theme change
+    sendThemeChange(theme, color) {
+        this.socket.emit('theme-change', { theme, color });
+    }
 
     // Notify server that camera is enabled
     sendCameraEnabled() {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,31 +10,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- Room Connection Modal -->
     <div id="connection-modal" class="modal">
         <div class="modal-content">
             <h1>🎨 CollabCanvas</h1>
             <p class="subtitle">Real-time Collaborative Whiteboard</p>
-            
+
             <div class="connection-options">
                 <button id="create-room-btn" class="btn btn-primary">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
                     Create New Room
                 </button>
-                
+
                 <div class="divider">
                     <span>or</span>
                 </div>
-                
+
                 <div class="join-room-section">
                     <input type="text" id="room-id-input" placeholder="Enter Room ID" maxlength="6">
                     <button id="join-room-btn" class="btn btn-secondary">Join Room</button>
                 </div>
             </div>
-            
+
             <div class="user-info-section" style="display: none;">
                 <input type="text" id="username-input" placeholder="Your Name" maxlength="20">
                 <button id="enter-room-btn" class="btn btn-primary">Enter Room</button>
@@ -48,22 +50,25 @@
             <div class="logo">
                 <h2>🎨 CollabCanvas</h2>
             </div>
-            
+
             <div class="room-info">
                 <div class="room-id-display">
                     <span class="label">Room ID:</span>
                     <span id="current-room-id" class="room-id"></span>
                     <button id="copy-link-btn" class="icon-btn" title="Copy room link">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M13.5 5.5L13.5 2.5C13.5 1.94772 13.0523 1.5 12.5 1.5L2.5 1.5C1.94772 1.5 1.5 1.94772 1.5 2.5L1.5 12.5C1.5 13.0523 1.94772 13.5 2.5 13.5L5.5 13.5M7.5 14.5L14.5 14.5C14.7761 14.5 15 14.2761 15 14L15 7C15 6.72386 14.7761 6.5 14.5 6.5L7.5 6.5C7.22386 6.5 7 6.72386 7 7L7 14C7 14.2761 7.22386 14.5 7.5 14.5Z" stroke="currentColor" stroke-width="1.5"/>
+                            <path
+                                d="M13.5 5.5L13.5 2.5C13.5 1.94772 13.0523 1.5 12.5 1.5L2.5 1.5C1.94772 1.5 1.5 1.94772 1.5 2.5L1.5 12.5C1.5 13.0523 1.94772 13.5 2.5 13.5L5.5 13.5M7.5 14.5L14.5 14.5C14.7761 14.5 15 14.2761 15 14L15 7C15 6.72386 14.7761 6.5 14.5 6.5L7.5 6.5C7.22386 6.5 7 6.72386 7 7L7 14C7 14.2761 7.22386 14.5 7.5 14.5Z"
+                                stroke="currentColor" stroke-width="1.5" />
                         </svg>
                     </button>
                 </div>
-                
+
                 <div class="users-online">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M3 14C3 11.2386 5.23858 9 8 9C10.7614 9 13 11.2386 13 14" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M3 14C3 11.2386 5.23858 9 8 9C10.7614 9 13 11.2386 13 14" stroke="currentColor"
+                            stroke-width="1.5" />
                     </svg>
                     <span id="users-count">1</span>
                 </div>
@@ -75,18 +80,21 @@
             <div class="tool-group">
                 <button class="tool-btn active" data-tool="pen" title="Pen (P)">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M13.5 3.5L16.5 6.5L7 16L3 17L4 13L13.5 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <path d="M13.5 3.5L16.5 6.5L7 16L3 17L4 13L13.5 3.5Z" stroke="currentColor" stroke-width="1.5"
+                            stroke-linejoin="round" />
                     </svg>
                 </button>
                 <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M14 6L8 12M6 14L10 10M3 11L9 5L15 11L9 17L3 11Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <path d="M14 6L8 12M6 14L10 10M3 11L9 5L15 11L9 17L3 11Z" stroke="currentColor"
+                            stroke-width="1.5" stroke-linejoin="round" />
                     </svg>
                 </button>
                 <button class="tool-btn" data-tool="sticky" title="Sticky Note (S)">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
                     </svg>
                 </button>
             </div>
@@ -116,9 +124,53 @@
             <div class="tool-group">
                 <button class="tool-btn" id="clear-canvas-btn" title="Clear Canvas">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M3 5H17M8 9V15M12 9V15M4 5L5 17C5 17.5523 5.44772 18 6 18H14C14.5523 18 15 17.5523 15 17L16 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <path
+                            d="M3 5H17M8 9V15M12 9V15M4 5L5 17C5 17.5523 5.44772 18 6 18H14C14.5523 18 15 17.5523 15 17L16 5"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                     </svg>
                 </button>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <div class="tool-group">
+                <div class="theme-selector">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M2 6H18M6 2V18" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                    <select id="theme-select" title="Canvas Theme">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="grid">Grid</option>
+                        <option value="dotted">Dotted</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <div class="tool-group">
+                <div class="canvas-color-picker">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C10.55 18 11 17.55 11 17C11 16.75 10.92 16.52 10.78 16.34C10.65 16.17 10.57 15.95 10.57 15.71C10.57 15.16 11.02 14.71 11.57 14.71H13C15.76 14.71 18 12.47 18 9.71C18 5.51 14.42 2 10 2ZM5.5 10C4.95 10 4.5 9.55 4.5 9C4.5 8.45 4.95 8 5.5 8C6.05 8 6.5 8.45 6.5 9C6.5 9.55 6.05 10 5.5 10ZM8 7C7.45 7 7 6.55 7 6C7 5.45 7.45 5 8 5C8.55 5 9 5.45 9 6C9 6.55 8.55 7 8 7ZM12 7C11.45 7 11 6.55 11 6C11 5.45 11.45 5 12 5C12.55 5 13 5.45 13 6C13 6.55 12.55 7 12 7ZM14.5 10C13.95 10 13.5 9.55 13.5 9C13.5 8.45 13.95 8 14.5 8C15.05 8 15.5 8.45 15.5 9C15.5 9.55 15.05 10 14.5 10Z"
+                            fill="currentColor" />
+                    </svg>
+                    <div class="canvas-color-presets">
+                        <button class="canvas-color-preset active" data-canvas-color="#1a1a1a"
+                            style="background: #1a1a1a;" title="Dark"></button>
+                        <button class="canvas-color-preset" data-canvas-color="#f5f5f5"
+                            style="background: #f5f5f5; border: 1px solid #ccc;" title="Light"></button>
+                        <button class="canvas-color-preset" data-canvas-color="#2d3748" style="background: #2d3748;"
+                            title="Slate"></button>
+                        <button class="canvas-color-preset" data-canvas-color="#1e3a5f" style="background: #1e3a5f;"
+                            title="Navy"></button>
+                        <button class="canvas-color-preset" data-canvas-color="#2d1b1e" style="background: #2d1b1e;"
+                            title="Burgundy"></button>
+                        <input type="color" id="canvas-color-input" value="#1a1a1a" title="Custom canvas color">
+                    </div>
+                </div>
             </div>
 
             <div class="spacer"></div>
@@ -126,14 +178,17 @@
             <div class="tool-group media-controls">
                 <button class="tool-btn" id="toggle-camera-btn" title="Toggle Camera">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect x="2" y="5" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M14 8L18 6V14L14 12" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        <rect x="2" y="5" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M14 8L18 6V14L14 12" stroke="currentColor" stroke-width="1.5"
+                            stroke-linejoin="round" />
                     </svg>
                 </button>
                 <button class="tool-btn" id="toggle-mic-btn" title="Toggle Microphone">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M4 10C4 13.3137 6.68629 16 10 16M10 16C13.3137 16 16 13.3137 16 10M10 16V18M10 18H7M10 18H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5" />
+                        <path
+                            d="M4 10C4 13.3137 6.68629 16 10 16M10 16C13.3137 16 16 13.3137 16 10M10 16V18M10 18H7M10 18H13"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                     </svg>
                 </button>
             </div>
@@ -163,4 +218,5 @@
     <script src="js/video-manager.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

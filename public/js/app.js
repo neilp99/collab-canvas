@@ -181,6 +181,11 @@ class App {
             this.updateRemoteCursor(data.userId, data.x, data.y);
         });
 
+        // Theme change
+        this.socketManager.on('theme-change', (data) => {
+            this.canvasManager.applyRemoteThemeChange(data.theme, data.color);
+        });
+
         // Error
         this.socketManager.on('error', (data) => {
             showToast(data.message || 'An error occurred', 'error');
@@ -288,6 +293,35 @@ class App {
             const btn = document.getElementById('toggle-mic-btn');
             const enabled = this.videoManager.toggleMicrophone();
             btn.classList.toggle('active', enabled);
+        });
+
+        // Theme selector
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            this.canvasManager.setTheme(theme);
+        });
+
+        // Canvas color presets
+        document.querySelectorAll('.canvas-color-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all presets
+                document.querySelectorAll('.canvas-color-preset').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked preset
+                btn.classList.add('active');
+
+                const color = btn.dataset.canvasColor;
+                const canvasColorInput = document.getElementById('canvas-color-input');
+                canvasColorInput.value = color;
+                this.canvasManager.setCanvasColor(color);
+            });
+        });
+
+        // Canvas color input
+        document.getElementById('canvas-color-input').addEventListener('input', (e) => {
+            const color = e.target.value;
+            // Remove active class from all presets
+            document.querySelectorAll('.canvas-color-preset').forEach(b => b.classList.remove('active'));
+            this.canvasManager.setCanvasColor(color);
         });
 
         // Keyboard shortcuts

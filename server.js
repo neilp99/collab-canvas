@@ -35,7 +35,7 @@ io.on('connection', (socket) => {
         // Initialize room data
         rooms.set(roomId, {
             users: new Map([[socket.id, currentUser]]),
-            canvasState: { objects: [] },
+            canvasState: { objects: [], theme: 'dark', canvasColor: '#1a1a1a' },
             createdAt: Date.now()
         });
 
@@ -132,6 +132,21 @@ io.on('connection', (socket) => {
             userId: socket.id,
             ...data
         });
+    });
+
+    // Theme change
+    socket.on('theme-change', (data) => {
+        if (!currentRoom) return;
+
+        const room = rooms.get(currentRoom);
+        if (room) {
+            room.canvasState.theme = data.theme;
+            if (data.color) {
+                room.canvasState.canvasColor = data.color;
+            }
+        }
+
+        socket.to(currentRoom).emit('theme-change', data);
     });
 
     // Camera enabled notification
