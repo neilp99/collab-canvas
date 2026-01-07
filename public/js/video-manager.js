@@ -387,10 +387,18 @@ class VideoManager {
                     const videoElement = existingTile.querySelector('video');
                     if (videoElement) {
                         videoElement.srcObject = remoteStream;
-                        // Explicitly play the updated stream
-                        videoElement.play().catch(error => {
-                            console.error(`[ontrack] Error playing updated video for ${userId}:`, error);
-                        });
+                        // Retry logic for playing updated stream
+                        const attemptPlay = (retries = 2) => {
+                            videoElement.play()
+                                .then(() => console.log(`[ontrack] ✅ Updated video playing for ${userId}`))
+                                .catch(error => {
+                                    console.error(`[ontrack] ❌ Error playing updated video for ${userId}:`, error);
+                                    if (retries > 0) {
+                                        setTimeout(() => attemptPlay(retries - 1), 200);
+                                    }
+                                });
+                        };
+                        attemptPlay();
                     }
                 } else {
                     // Create new video tile
@@ -457,10 +465,18 @@ class VideoManager {
                     const videoElement = existingTile.querySelector('video');
                     if (videoElement) {
                         videoElement.srcObject = remoteStream;
-                        // Explicitly play the updated stream
-                        videoElement.play().catch(error => {
-                            console.error(`[handleOffer] Error playing updated video for ${userId}:`, error);
-                        });
+                        // Retry logic for playing updated stream
+                        const attemptPlay = (retries = 2) => {
+                            videoElement.play()
+                                .then(() => console.log(`[handleOffer] ✅ Updated video playing for ${userId}`))
+                                .catch(error => {
+                                    console.error(`[handleOffer] ❌ Error playing updated video for ${userId}:`, error);
+                                    if (retries > 0) {
+                                        setTimeout(() => attemptPlay(retries - 1), 200);
+                                    }
+                                });
+                        };
+                        attemptPlay();
                     }
                 } else {
                     // Create new video tile
@@ -544,6 +560,8 @@ class VideoManager {
 
     // Add remote video to grid
     addRemoteVideo(userId, stream) {
+        console.log('[addRemoteVideo] Creating video tile for:', userId);
+
         const tile = document.createElement('div');
         tile.className = 'video-tile';
         tile.id = `video-${userId}`;
@@ -555,15 +573,38 @@ class VideoManager {
         video.muted = false; // Don't mute remote video - we want to hear them
         video.playsInline = true;
 
-        // Explicitly play the video and handle any errors
-        video.play().catch(error => {
-            console.error(`[addRemoteVideo] Error playing video for ${userId}:`, error);
-            // Try playing muted if unmuted autoplay fails
-            video.muted = true;
-            video.play().catch(err => {
-                console.error(`[addRemoteVideo] Error playing muted video for ${userId}:`, err);
-            });
-        });
+        // Retry logic for play() with backoff
+        const attemptPlay = (retries = 3, delay = 300) => {
+            video.play()
+                .then(() => {
+                    console.log(`[addRemoteVideo] ✅ Video playing for ${userId}`);
+                })
+                .catch(error => {
+                    console.error(`[addRemoteVideo] ❌ Error playing video for ${userId} (${retries} retries left):`, error);
+                    if (retries > 0) {
+                        // Try muted first, then retry
+                        if (!video.muted) {
+                            console.log(`[addRemoteVideo] Retrying with muted for ${userId}`);
+                            video.muted = true;
+                        }
+                        setTimeout(() => attemptPlay(retries - 1, delay * 1.5), delay);
+                    } else {
+                        console.error(`[addRemoteVideo] ❌ Failed to play video for ${userId} after all retries`);
+                    }
+                });
+        };
+
+        // Wait for video metadata to load before playing
+        video.onloadedmetadata = () => {
+            console.log('[addRemoteVideo] Video metadata loaded for:', userId);
+            attemptPlay();
+        };
+
+        // Also try playing immediately in case metadata is already loaded
+        if (video.readyState >= 1) {
+            console.log('[addRemoteVideo] Metadata already loaded, attempting play for:', userId);
+            attemptPlay();
+        }
 
         const label = document.createElement('div');
         label.className = 'video-label';
