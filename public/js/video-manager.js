@@ -49,7 +49,15 @@ class VideoManager {
         // Handle user joined - DON'T initiate connection here
         // Wait for them to enable camera and broadcast
         this.socketManager.on('user-joined', async (user) => {
-            // Do nothing - let users initiate when they enable cameras
+            console.log('[VideoManager] 👤 User joined:', user.id);
+
+            // If we have our camera enabled, send them an offer so they can see our video
+            if (this.cameraEnabled && this.localStream) {
+                console.log('[VideoManager] 📹 We have camera enabled, creating connection to new user:', user.id);
+                await this.createPeerConnection(user.id);
+            } else {
+                console.log('[VideoManager] 📹 We don\'t have camera, waiting for them to initiate');
+            }
         });
 
         // Handle user left - close connection
@@ -379,6 +387,10 @@ class VideoManager {
                     const videoElement = existingTile.querySelector('video');
                     if (videoElement) {
                         videoElement.srcObject = remoteStream;
+                        // Explicitly play the updated stream
+                        videoElement.play().catch(error => {
+                            console.error(`[ontrack] Error playing updated video for ${userId}:`, error);
+                        });
                     }
                 } else {
                     // Create new video tile
@@ -445,6 +457,10 @@ class VideoManager {
                     const videoElement = existingTile.querySelector('video');
                     if (videoElement) {
                         videoElement.srcObject = remoteStream;
+                        // Explicitly play the updated stream
+                        videoElement.play().catch(error => {
+                            console.error(`[handleOffer] Error playing updated video for ${userId}:`, error);
+                        });
                     }
                 } else {
                     // Create new video tile
@@ -536,7 +552,18 @@ class VideoManager {
         const video = document.createElement('video');
         video.srcObject = stream;
         video.autoplay = true;
+        video.muted = false; // Don't mute remote video - we want to hear them
         video.playsInline = true;
+
+        // Explicitly play the video and handle any errors
+        video.play().catch(error => {
+            console.error(`[addRemoteVideo] Error playing video for ${userId}:`, error);
+            // Try playing muted if unmuted autoplay fails
+            video.muted = true;
+            video.play().catch(err => {
+                console.error(`[addRemoteVideo] Error playing muted video for ${userId}:`, err);
+            });
+        });
 
         const label = document.createElement('div');
         label.className = 'video-label';
