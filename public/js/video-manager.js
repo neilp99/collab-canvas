@@ -7,6 +7,7 @@ class VideoManager {
         this.localStream = null;
         this.peerConnections = new Map();
         this.remoteStreams = new Map();
+        this.userNames = new Map(); // Store usernames
         this.cameraEnabled = false;
         this.micEnabled = false;
         this.audioContext = null;
@@ -91,6 +92,19 @@ class VideoManager {
             this.removeRemoteVideo(userId);
             console.log('[VideoManager] ✅ Removed video tile, connection kept alive');
         });
+    }
+
+    // Set username for a user
+    setUserName(userId, name) {
+        this.userNames.set(userId, name);
+        // Update existing video tile if present
+        const tile = document.getElementById(`video-${userId}`);
+        if (tile) {
+            const label = tile.querySelector('.video-label');
+            if (label) {
+                label.textContent = name;
+            }
+        }
     }
 
     // Toggle camera on/off
@@ -608,7 +622,7 @@ class VideoManager {
 
         const label = document.createElement('div');
         label.className = 'video-label';
-        label.textContent = 'User'; // Will be updated with actual name
+        label.textContent = this.userNames.get(userId) || 'User'; // Use stored username
 
         tile.appendChild(video);
         tile.appendChild(label);

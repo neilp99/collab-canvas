@@ -7,6 +7,7 @@ class App {
         this.videoManager = null;
         this.remoteCursors = new Map();
         this.connectedUsers = new Set(); // Track all connected users
+        this.userNames = new Map(); // Store user names by userId
         this.roomPassword = null; // Store room password for copy link
 
         // Initialize when DOM is ready
@@ -198,11 +199,17 @@ class App {
             console.log('Joined room:', data.roomId);
             updateUrl(data.roomId);
 
-            // Track all existing users in the room
+            // Track all existing users in the room and store their names
             if (data.users && Array.isArray(data.users)) {
                 data.users.forEach(user => {
                     if (user.id !== this.socketManager.socket.id) {
                         this.connectedUsers.add(user.id);
+                        this.userNames.set(user.id, user.name); // Store existing user names
+
+                        // Notify video manager
+                        if (this.videoManager) {
+                            this.videoManager.setUserName(user.id, user.name);
+                        }
                     }
                 });
             }
@@ -216,6 +223,13 @@ class App {
         this.socketManager.on('user-joined', (user) => {
             console.log('User joined:', user);
             this.connectedUsers.add(user.id);
+            this.userNames.set(user.id, user.name); // Store username
+
+            // Notify video manager if it exists
+            if (this.videoManager) {
+                this.videoManager.setUserName(user.id, user.name);
+            }
+
             showToast(`${user.name} joined`, 'info');
             this.updateUsersCount();
         });
@@ -224,6 +238,7 @@ class App {
         this.socketManager.on('user-left', (data) => {
             console.log('User left:', data.userId);
             this.connectedUsers.delete(data.userId);
+            this.userNames.delete(data.userId); // Remove username
             this.remoteCursors.delete(data.userId);
             this.removeCursor(data.userId);
             this.updateUsersCount();
@@ -440,7 +455,7 @@ class App {
 
             const label = document.createElement('div');
             label.className = 'cursor-label';
-            label.textContent = 'User'; // Will be updated with actual name
+            label.textContent = this.userNames.get(userId) || 'User'; // Use stored username
             label.style.backgroundColor = color;
 
             cursor.appendChild(label);
