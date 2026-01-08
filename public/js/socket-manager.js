@@ -25,6 +25,16 @@ class SocketManager {
         this.socket.on('error', (data) => {
             console.error('Socket error:', data);
             this.trigger('error', data);
+
+            // Reset UI state on error
+            if (data.message && (data.message.includes('Room not found') || data.message.includes('Incorrect password'))) {
+                // Hide user info section and show connection options again
+                document.querySelector('.user-info-section').style.display = 'none';
+                document.querySelector('.connection-options').style.display = 'flex';
+
+                // Clear password field for security
+                document.getElementById('room-password-input').value = '';
+            }
         });
 
         // Room events

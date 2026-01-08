@@ -194,6 +194,14 @@ class App {
             showToast(`Room created: ${data.roomId}`, 'success');
         });
 
+        // Error
+        this.socketManager.on('error', (data) => {
+            console.error('Received error:', data);
+            // Show user-friendly error message
+            const errorMessage = data.message || 'An error occurred';
+            showToast(errorMessage, 'error');
+        });
+
         // Room joined
         this.socketManager.on('room-joined', (data) => {
             console.log('Joined room:', data.roomId);
