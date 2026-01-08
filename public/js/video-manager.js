@@ -31,14 +31,22 @@ class VideoManager {
 
     setupSignalingHandlers() {
         // Handle incoming WebRTC offer
-        this.socketManager.on('webrtc:offer', async ({ fromUserId, offer }) => {
-            console.log('Received offer from:', fromUserId);
+        this.socketManager.on('webrtc:offer', async ({ fromUserId, fromUserName, offer }) => {
+            console.log('Received offer from:', fromUserId, 'name:', fromUserName);
+            // Store username immediately when receiving offer
+            if (fromUserName) {
+                this.userNames.set(fromUserId, fromUserName);
+            }
             await this.handleOffer(fromUserId, offer);
         });
 
         // Handle incoming WebRTC answer
-        this.socketManager.on('webrtc:answer', async ({ fromUserId, answer }) => {
-            console.log('Received answer from:', fromUserId);
+        this.socketManager.on('webrtc:answer', async ({ fromUserId, fromUserName, answer }) => {
+            console.log('Received answer from:', fromUserId, 'name:', fromUserName);
+            // Store username immediately when receiving answer
+            if (fromUserName) {
+                this.userNames.set(fromUserId, fromUserName);
+            }
             await this.handleAnswer(fromUserId, answer);
         });
 

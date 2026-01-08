@@ -179,6 +179,7 @@ io.on('connection', (socket) => {
     socket.on('webrtc:offer', ({ targetUserId, offer }) => {
         io.to(targetUserId).emit('webrtc:offer', {
             fromUserId: socket.id,
+            fromUserName: currentUser?.name || 'User',
             offer
         });
     });
@@ -187,6 +188,7 @@ io.on('connection', (socket) => {
     socket.on('webrtc:answer', ({ targetUserId, answer }) => {
         io.to(targetUserId).emit('webrtc:answer', {
             fromUserId: socket.id,
+            fromUserName: currentUser?.name || 'User',
             answer
         });
     });
