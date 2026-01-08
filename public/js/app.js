@@ -34,7 +34,7 @@ class App {
         const params = getUrlParams();
         if (params.roomId) {
             document.getElementById('room-id-input').value = params.roomId;
-            this.showUserInfo();
+            // Don't call showUserInfo() - let user enter password first
         }
 
         console.log('CollabCanvas initialized');
