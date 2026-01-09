@@ -183,48 +183,25 @@
 
             <div class="divider-vertical"></div>
 
+            <!-- Canvas Color Selection -->
             <div class="tool-group">
-                <div class="theme-selector">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" />
-                        <path d="M2 6H18M6 2V18" stroke="currentColor" stroke-width="1.5" />
-                    </svg>
-                    <select id="theme-select" title="Canvas Theme">
-                        <option value="dark">Dark</option>
-                        <option value="light">Light</option>
-                        <option value="grid">Grid</option>
-                        <option value="dotted">Dotted</option>
-                    </select>
+                <label style="font-size: 12px; color: #888; margin-right: 8px;">Canvas Color</label>
+                <input type="color" id="canvas-color-input" value="#1a1a1a" title="Canvas Background Color">
+                <div class="canvas-color-presets">
+                    <button class="canvas-color-preset active" data-canvas-color="#1a1a1a" style="background: #1a1a1a;"
+                        title="Dark"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#f5f5f5"
+                        style="background: #f5f5f5; border: 1px solid #ccc;" title="Light"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#2d3748" style="background: #2d3748;"
+                        title="Slate"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#1e3a8a" style="background: #1e3a8a;"
+                        title="Navy"></button>
                 </div>
             </div>
 
             <div class="divider-vertical"></div>
 
-            <div class="tool-group">
-                <div class="canvas-color-picker">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path
-                            d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C10.55 18 11 17.55 11 17C11 16.75 10.92 16.52 10.78 16.34C10.65 16.17 10.57 15.95 10.57 15.71C10.57 15.16 11.02 14.71 11.57 14.71H13C15.76 14.71 18 12.47 18 9.71C18 5.51 14.42 2 10 2ZM5.5 10C4.95 10 4.5 9.55 4.5 9C4.5 8.45 4.95 8 5.5 8C6.05 8 6.5 8.45 6.5 9C6.5 9.55 6.05 10 5.5 10ZM8 7C7.45 7 7 6.55 7 6C7 5.45 7.45 5 8 5C8.55 5 9 5.45 9 6C9 6.55 8.55 7 8 7ZM12 7C11.45 7 11 6.55 11 6C11 5.45 11.45 5 12 5C12.55 5 13 5.45 13 6C13 6.55 12.55 7 12 7ZM14.5 10C13.95 10 13.5 9.55 13.5 9C13.5 8.45 13.95 8 14.5 8C15.05 8 15.5 8.45 15.5 9C15.5 9.55 15.05 10 14.5 10Z"
-                            fill="currentColor" />
-                    </svg>
-                    <div class="canvas-color-presets">
-                        <button class="canvas-color-preset active" data-canvas-color="#1a1a1a"
-                            style="background: #1a1a1a;" title="Dark"></button>
-                        <button class="canvas-color-preset" data-canvas-color="#f5f5f5"
-                            style="background: #f5f5f5; border: 1px solid #ccc;" title="Light"></button>
-                        <button class="canvas-color-preset" data-canvas-color="#2d3748" style="background: #2d3748;"
-                            title="Slate"></button>
-                        <button class="canvas-color-preset" data-canvas-color="#1e3a5f" style="background: #1e3a5f;"
-                            title="Navy"></button>
-                        <button class="canvas-color-preset" data-canvas-color="#2d1b1e" style="background: #2d1b1e;"
-                            title="Burgundy"></button>
-                        <input type="color" id="canvas-color-input" value="#1a1a1a" title="Custom canvas color">
-                    </div>
-                </div>
-            </div>
-
-            <div class="spacer"></div>
-
+            <!-- Video Controls -->
             <div class="tool-group media-controls">
                 <button class="tool-btn" id="toggle-camera-btn" title="Toggle Camera">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -250,46 +227,48 @@
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- Chat Panel -->
-        <div id="chat-panel" class="chat-panel">
-            <div class="chat-header">
-                <h3>💬 Chat</h3>
-                <button class="icon-btn" onclick="document.getElementById('toggle-chat-btn').click()" title="Close">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-            <div id="message-list" class="message-list">
-                <!-- Messages will be added dynamically -->
-            </div>
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
-                <button id="send-message-btn" class="btn btn-primary">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M14 2L7 9M14 2L10 14L7 9M14 2L2 6L7 9" stroke="currentColor" stroke-width="1.5"
-                            stroke-linejoin="round" />
-                    </svg>
-                </button>
-                <div id="chat-input-error" class="input-error" style="display: none;"></div>
-            </div>
+    <!-- Video Grid -->
+
+    <!-- Chat Panel -->
+    <div id="chat-panel" class="chat-panel">
+        <div class="chat-header">
+            <h3>💬 Chat</h3>
+            <button class="icon-btn" onclick="document.getElementById('toggle-chat-btn').click()" title="Close">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </button>
         </div>
-
-        <!-- Canvas Container -->
-        <div id="canvas-container">
-            <canvas id="main-canvas"></canvas>
-            <div id="cursors-overlay"></div>
+        <div id="message-list" class="message-list">
+            <!-- Messages will be added dynamically -->
         </div>
-
-        <!-- Video Grid -->
-        <div id="video-grid" class="video-grid grid-0">
-            <!-- Videos will be added dynamically -->
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+            <button id="send-message-btn" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M14 2L7 9M14 2L10 14L7 9M14 2L2 6L7 9" stroke="currentColor" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <div id="chat-input-error" class="input-error" style="display: none;"></div>
         </div>
+    </div>
 
-        <!-- Toast Notifications -->
-        <div id="toast-container"></div>
+    <!-- Canvas Container -->
+    <div id="canvas-container">
+        <canvas id="main-canvas"></canvas>
+        <div id="cursors-overlay"></div>
+    </div>
+
+    <!-- Video Grid -->
+    <div id="video-grid" class="video-grid grid-0">
+        <!-- Videos will be added dynamically -->
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
     </div>
 
     <!-- Scripts -->

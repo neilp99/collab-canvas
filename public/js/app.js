@@ -431,12 +431,6 @@ class App {
             btn.classList.toggle('active', enabled);
         });
 
-        // Theme selector
-        document.getElementById('theme-select').addEventListener('change', (e) => {
-            const theme = e.target.value;
-            this.canvasManager.setTheme(theme);
-        });
-
         // Canvas color presets
         document.querySelectorAll('.canvas-color-preset').forEach(btn => {
             btn.addEventListener('click', () => {
