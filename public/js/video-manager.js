@@ -4,7 +4,9 @@ class VideoManager {
     constructor(gridElement, socketManager) {
         this.gridElement = gridElement;
         this.socketManager = socketManager;
-        this.localStream = null;
+        this.localStream = null; // Combined stream for backward compatibility
+        this.localVideoStream = null; // Separate video stream
+        this.localAudioStream = null; // Separate audio stream
         this.peerConnections = new Map();
         this.remoteStreams = new Map();
         this.userNames = new Map(); // Store usernames
@@ -122,7 +124,41 @@ class VideoManager {
         } else {
             this.disableCamera();
         }
-        return this.cameraEnabled;
+        return this.micEnabled;
+    }
+
+    // Helper: Combine video and audio streams into one MediaStream
+    updateCombinedStream() {
+        const tracks = [];
+
+        // Add video track if camera enabled
+        if (this.localVideoStream) {
+            const videoTracks = this.localVideoStream.getVideoTracks();
+            if (videoTracks.length > 0) {
+                tracks.push(videoTracks[0]);
+            }
+        }
+
+        // Add audio track if mic enabled
+        if (this.localAudioStream) {
+            const audioTracks = this.localAudioStream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                tracks.push(audioTracks[0]);
+            }
+        }
+
+        // Create or update combined stream
+        if (tracks.length > 0) {
+            this.localStream = new MediaStream(tracks);
+        } else {
+            this.localStream = null;
+        }
+
+        console.log('[VideoManager] Combined stream updated:', {
+            videoEnabled: this.cameraEnabled,
+            micEnabled: this.micEnabled,
+            tracks: tracks.length
+        });
     }
 
     // Enable camera
@@ -133,28 +169,25 @@ class VideoManager {
 
             if (useMockVideo) {
                 // Create mock video stream for testing
-                this.localStream = this.createMockVideoStream();
+                this.localVideoStream = this.createMockVideoStream();
             } else {
-                // Use real camera
-                this.localStream = await navigator.mediaDevices.getUserMedia({
+                // Get video stream only (audio handled separately)
+                this.localVideoStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     },
-                    audio: true
+                    audio: false // Audio will be handled by toggleMicrophone
                 });
             }
 
             this.cameraEnabled = true;
-            this.micEnabled = true;
+
+            // Update combined stream with video track
+            this.updateCombinedStream();
 
             // Add local video
             this.addLocalVideo();
-
-            // Initialize audio context for speaker detection (only if real audio)
-            if (!useMockVideo) {
-                this.setupAudioAnalysis();
-            }
 
             // Notify other users that camera is enabled
             this.socketManager.sendCameraEnabled();
@@ -176,33 +209,35 @@ class VideoManager {
 
                         // Get existing senders
                         const senders = pc.getSenders();
-                        const videoTrack = this.localStream.getVideoTracks()[0];
-                        const audioTrack = this.localStream.getAudioTracks()[0];
+                        const videoTrack = this.localVideoStream?.getVideoTracks()[0];
+                        const audioTrack = this.localAudioStream?.getAudioTracks()[0];
 
                         let needsRenegotiation = false;
 
-                        // Replace video track
-                        const videoSender = senders.find(s => s.track?.kind === 'video');
-                        if (videoSender) {
-                            console.log('  - Replacing video track (no renegotiation needed)');
-                            await videoSender.replaceTrack(videoTrack);
-                            // replaceTrack() doesn't need renegotiation
-                        } else {
-                            console.log('  - Adding new video track');
-                            pc.addTrack(videoTrack, this.localStream);
-                            needsRenegotiation = true;
+                        // Replace/add video track if we have one
+                        if (videoTrack) {
+                            const videoSender = senders.find(s => s.track?.kind === 'video');
+                            if (videoSender) {
+                                console.log('  - Replacing video track');
+                                await videoSender.replaceTrack(videoTrack);
+                            } else {
+                                console.log('  - Adding new video track');
+                                pc.addTrack(videoTrack, this.localStream);
+                                needsRenegotiation = true;
+                            }
                         }
 
-                        // Replace audio track
-                        const audioSender = senders.find(s => s.track?.kind === 'audio');
-                        if (audioSender) {
-                            console.log('  - Replacing audio track (no renegotiation needed)');
-                            await audioSender.replaceTrack(audioTrack);
-                            // replaceTrack() doesn't need renegotiation
-                        } else {
-                            console.log('  - Adding new audio track');
-                            pc.addTrack(audioTrack, this.localStream);
-                            needsRenegotiation = true;
+                        // Replace/add audio track if we have one (don't remove existing)
+                        if (audioTrack) {
+                            const audioSender = senders.find(s => s.track?.kind === 'audio');
+                            if (audioSender) {
+                                console.log('  - Replacing audio track');
+                                await audioSender.replaceTrack(audioTrack);
+                            } else {
+                                console.log('  - Adding new audio track');
+                                pc.addTrack(audioTrack, this.localStream);
+                                needsRenegotiation = true;
+                            }
                         }
 
                         // Create and send new offer to signal track changes
@@ -303,41 +338,43 @@ class VideoManager {
         return stream;
     }
 
-    // Disable camera
+    // Disable camera (video only, leave audio intact)
     async disableCamera() {
-        if (this.localStream) {
-            // Stop all local tracks
-            this.localStream.getTracks().forEach(track => {
+        if (this.localVideoStream) {
+            // Stop video tracks only
+            this.localVideoStream.getTracks().forEach(track => {
                 track.stop();
             });
-
-            // Remove tracks from all peer connections and renegotiate
-            for (const [userId, pc] of this.peerConnections) {
-                const senders = pc.getSenders();
-
-                // Remove all senders (video and audio tracks)
-                for (const sender of senders) {
-                    if (sender.track) {
-                        pc.removeTrack(sender);
-                    }
-                }
-
-                // Create and send new offer to signal track removal
-                try {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    this.socketManager.sendWebRTCOffer(userId, offer);
-                    console.log(`[disableCamera] Sent renegotiation offer to ${userId} (tracks removed)`);
-                } catch (error) {
-                    console.error(`[disableCamera] Error renegotiating with ${userId}:`, error);
-                }
-            }
-
-            this.localStream = null;
+            this.localVideoStream = null;
         }
 
         this.cameraEnabled = false;
-        this.micEnabled = false;
+
+        // Update combined stream (removes video, keeps audio if present)
+        this.updateCombinedStream();
+
+        // Remove video tracks from all peer connections
+        for (const [userId, pc] of this.peerConnections) {
+            const senders = pc.getSenders();
+
+            // Remove only video senders, keep audio
+            for (const sender of senders) {
+                if (sender.track?.kind === 'video') {
+                    pc.removeTrack(sender);
+                    console.log(`[disableCamera] Removed video track for ${userId}`);
+                }
+            }
+
+            // Renegotiate to signal video track removal
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                this.socketManager.sendWebRTCOffer(userId, offer);
+                console.log(`[disableCamera] Sent renegotiation offer to ${userId}`);
+            } catch (error) {
+                console.error(`[disableCamera] Error renegotiating with ${userId}:`, error);
+            }
+        }
 
         // Remove local video tile
         this.removeLocalVideo();
@@ -349,18 +386,109 @@ class VideoManager {
         showToast('Camera disabled', 'info');
     }
 
-    // Toggle microphone
-    toggleMicrophone() {
-        if (!this.localStream) return false;
+    // Toggle microphone on/off
+    async toggleMicrophone() {
+        if (!this.micEnabled) {
+            await this.enableMicrophone();
+        } else {
+            await this.disableMicrophone();
+        }
+        return this.micEnabled;
+    }
 
-        const audioTrack = this.localStream.getAudioTracks()[0];
-        if (audioTrack) {
-            audioTrack.enabled = !audioTrack.enabled;
-            this.micEnabled = audioTrack.enabled;
-            showToast(this.micEnabled ? 'Microphone unmuted' : 'Microphone muted', 'info');
+    // Enable microphone (audio only)
+    async enableMicrophone() {
+        try {
+            // Get audio stream only
+            this.localAudioStream = await navigator.mediaDevices.getUserMedia({
+                video: false,
+                audio: true
+            });
+
+            this.micEnabled = true;
+
+            // Update combined stream with audio track
+            this.updateCombinedStream();
+
+            // Initialize audio context for speaker detection
+            this.setupAudioAnalysis();
+
+            // Add audio track to all existing peer connections
+            const app = window.app;
+            if (app && app.connectedUsers) {
+                for (const userId of app.connectedUsers) {
+                    const pc = this.peerConnections.get(userId);
+                    if (pc) {
+                        const audioTrack = this.localAudioStream.getAudioTracks()[0];
+                        const senders = pc.getSenders();
+                        const audioSender = senders.find(s => s.track?.kind === 'audio');
+
+                        if (audioSender) {
+                            // Replace existing audio track
+                            await audioSender.replaceTrack(audioTrack);
+                            console.log(`[enableMicrophone] Replaced audio track for ${userId}`);
+                        } else {
+                            // Add new audio track
+                            pc.addTrack(audioTrack, this.localStream);
+
+                            // Renegotiate
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            this.socketManager.sendWebRTCOffer(userId, offer);
+                            console.log(`[enableMicrophone] Added audio track for ${userId}`);
+                        }
+                    }
+                }
+            }
+
+            showToast('Microphone enabled', 'success');
+            return true;
+        } catch (error) {
+            console.error('Error enabling microphone:', error);
+            showToast('Could not access microphone', 'error');
+            return false;
+        }
+    }
+
+    // Disable microphone (audio only, leave video intact)
+    async disableMicrophone() {
+        if (this.localAudioStream) {
+            // Stop audio tracks only
+            this.localAudioStream.getTracks().forEach(track => {
+                track.stop();
+            });
+            this.localAudioStream = null;
         }
 
-        return this.micEnabled;
+        this.micEnabled = false;
+
+        // Update combined stream (removes audio, keeps video if present)
+        this.updateCombinedStream();
+
+        // Remove audio tracks from all peer connections
+        for (const [userId, pc] of this.peerConnections) {
+            const senders = pc.getSenders();
+
+            // Remove only audio senders, keep video
+            for (const sender of senders) {
+                if (sender.track?.kind === 'audio') {
+                    pc.removeTrack(sender);
+                    console.log(`[disableMicrophone] Removed audio track for ${userId}`);
+                }
+            }
+
+            // Renegotiate to signal audio track removal
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                this.socketManager.sendWebRTCOffer(userId, offer);
+                console.log(`[disableMicrophone] Sent renegotiation offer to ${userId}`);
+            } catch (error) {
+                console.error(`[disableMicrophone] Error renegotiating with ${userId}:`, error);
+            }
+        }
+
+        showToast('Microphone disabled', 'info');
     }
 
     // Create peer connection
