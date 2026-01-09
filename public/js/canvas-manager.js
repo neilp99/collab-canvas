@@ -47,6 +47,11 @@ class CanvasManager {
 
         // Don't resize the actual canvas - keep it large for endless feel
         // This is set in constructor
+
+        // Prevent browser zoom on wheel over canvas
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+        }, { passive: false });
     }
 
     setupPanZoom() {
