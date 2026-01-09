@@ -121,6 +121,13 @@ class CanvasManager {
         console.log(`Zoom: ${percentage}%`);
     }
 
+    // IMPORTANT: Independent Canvas Views Architecture
+    // - Each user's viewport transform (pan/zoom) is LOCAL ONLY and NOT synced
+    // - Canvas objects are synced in absolute canvas coordinates
+    // - This allows each user to independently navigate while collaborating on same objects
+    // - Cursor positions are sent in canvas coordinates, so they display correctly
+    //   regardless of each user's viewport settings
+
     setupCanvasEvents() {
         // Object added
         this.canvas.on('object:added', (e) => {
