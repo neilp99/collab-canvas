@@ -107,6 +107,11 @@ class SocketManager {
         this.socket.on('webrtc:ice-candidate', (data) => {
             this.trigger('webrtc:ice-candidate', data);
         });
+
+        // Chat events
+        this.socket.on('chat:message', (data) => {
+            this.trigger('chat:message', data);
+        });
     }
 
     // Create a new room
