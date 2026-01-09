@@ -116,8 +116,10 @@ class ChatManager {
         try {
             this.socketManager.socket.emit('chat:message', message);
 
-            // Add to local message list (will also be received via socket)
-            // This provides immediate feedback
+            // Render message locally for immediate feedback
+            // Server broadcasts to others but not back to sender
+            this.receiveMessage(message);
+
             console.log('[ChatManager] Message sent:', message.id);
 
             // Clear input
