@@ -188,12 +188,9 @@ class CanvasManager {
             this.canvas.freeDrawingBrush.color = this.currentColor;
             this.canvas.freeDrawingBrush.width = this.currentWidth;
         } else if (tool === 'eraser') {
-            this.canvas.isDrawingMode = true;
-            this.canvas.selection = false;
-            // Set eraser color based on current theme
-            const eraserColor = this.currentTheme === 'light' ? '#f5f5f5' : '#1a1a1a';
-            this.canvas.freeDrawingBrush.color = eraserColor;
-            this.canvas.freeDrawingBrush.width = this.currentWidth * 3;
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = true;
+            this.enableEraserTool();
         } else if (tool === 'sticky') {
             this.canvas.isDrawingMode = false;
             this.canvas.selection = true;
@@ -230,6 +227,109 @@ class CanvasManager {
         if (this.shapeMouseUp) {
             this.canvas.off('mouse:up', this.shapeMouseUp);
         }
+
+        // Clear eraser listeners
+        if (this.eraserMouseDown) {
+            this.canvas.off('mouse:down', this.eraserMouseDown);
+        }
+        if (this.eraserMouseMove) {
+            this.canvas.off('mouse:move', this.eraserMouseMove);
+        }
+        if (this.eraserMouseUp) {
+            this.canvas.off('mouse:up', this.eraserMouseUp);
+        }
+
+        // Reset cursor
+        this.canvas.defaultCursor = 'default';
+        this.canvas.hoverCursor = 'move';
+    }
+
+    // Enable eraser tool (removes objects)
+    enableEraserTool() {
+        let isErasing = false;
+        const eraserSize = this.currentWidth * 5; // Eraser area radius
+
+        this.eraserMouseDown = (o) => {
+            isErasing = true;
+            this.eraseAtPosition(o.e);
+        };
+
+        this.eraserMouseMove = (o) => {
+            if (!isErasing) return;
+            this.eraseAtPosition(o.e);
+        };
+
+        this.eraserMouseUp = () => {
+            isErasing = false;
+        };
+
+        this.canvas.on('mouse:down', this.eraserMouseDown);
+        this.canvas.on('mouse:move', this.eraserMouseMove);
+        this.canvas.on('mouse:up', this.eraserMouseUp);
+
+        // Change cursor to indicate eraser mode
+        this.canvas.defaultCursor = 'crosshair';
+        this.canvas.hoverCursor = 'crosshair';
+    }
+
+    // Erase objects at mouse position
+    eraseAtPosition(e) {
+        const pointer = this.canvas.getPointer(e);
+        const eraserSize = this.currentWidth * 5;
+
+        // Get all objects on canvas
+        const objects = this.canvas.getObjects();
+        const objectsToRemove = [];
+
+        objects.forEach(obj => {
+            // Skip sticky notes (protected from eraser)
+            if (obj.isSticky) {
+                return;
+            }
+
+            // Skip background patterns and overlays
+            if (obj === this.canvas.backgroundImage || obj === this.canvas.overlayImage) {
+                return;
+            }
+
+            // Check if object intersects with eraser area
+            if (this.objectIntersectsEraser(obj, pointer, eraserSize)) {
+                objectsToRemove.push(obj);
+            }
+        });
+
+        // Remove intersecting objects
+        objectsToRemove.forEach(obj => {
+            this.canvas.remove(obj);
+            if (obj.id) {
+                this.socketManager.sendCanvasObjectRemoved(obj.id);
+            }
+        });
+
+        this.canvas.renderAll();
+    }
+
+    // Check if object intersects with eraser area
+    objectIntersectsEraser(obj, pointer, eraserSize) {
+        const objLeft = obj.left;
+        const objTop = obj.top;
+        const objWidth = obj.width * (obj.scaleX || 1);
+        const objHeight = obj.height * (obj.scaleY || 1);
+
+        // Simple circle-rectangle intersection check
+        const circleX = pointer.x;
+        const circleY = pointer.y;
+
+        // Find closest point on rectangle to circle center
+        const closestX = Math.max(objLeft, Math.min(circleX, objLeft + objWidth));
+        const closestY = Math.max(objTop, Math.min(circleY, objTop + objHeight));
+
+        // Calculate distance
+        const distanceX = circleX - closestX;
+        const distanceY = circleY - closestY;
+        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+        return distanceSquared < (eraserSize * eraserSize);
     }
 
     // Set drawing color
@@ -463,6 +563,7 @@ class CanvasManager {
             left: x || 100,
             top: y || 100,
             id: stickyId,
+            isSticky: true, // Protect from eraser
             selectable: true,
             hasControls: true,
             lockRotation: false
