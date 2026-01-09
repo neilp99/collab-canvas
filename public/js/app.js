@@ -454,6 +454,32 @@ class App {
             this.canvasManager.setCanvasColor(color);
         });
 
+        // Theme selector
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            this.canvasManager.setTheme(theme);
+        });
+
+        // Shape options in dropdown
+        document.querySelectorAll('.shape-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tool = btn.dataset.tool;
+                this.setTool(tool);
+
+                // Update active state on all tool buttons
+                document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.shape-option').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update shapes trigger icon to match selected shape
+                const shapesIcon = btn.querySelector('svg').cloneNode(true);
+                const trigger = document.querySelector('.shapes-trigger');
+                const existingIcon = trigger.querySelector('svg:first-child');
+                existingIcon.replaceWith(shapesIcon);
+                trigger.classList.add('active');
+            });
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             // Ignore if typing in input

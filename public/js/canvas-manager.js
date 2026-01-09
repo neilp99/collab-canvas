@@ -412,90 +412,95 @@ class CanvasManager {
             case 'dotted':
                 this.drawDottedPattern();
                 break;
+
+            case 'none':
+            default:
+                // Just plain color, no pattern
+                break;
         }
 
         this.canvas.renderAll();
     }
 
-    // Draw grid pattern  
+    // Draw grid pattern using tiling for endless canvas
     drawGridPattern() {
         const gridSize = 40;
         const canvas = this.canvas;
 
-        // Create pattern using canvas context
+        // Create small tile pattern that will repeat
         const patternCanvas = document.createElement('canvas');
-        patternCanvas.width = canvas.width;
-        patternCanvas.height = canvas.height;
+        patternCanvas.width = gridSize;
+        patternCanvas.height = gridSize;
         const ctx = patternCanvas.getContext('2d');
 
         // Determine grid color based on background
         const isLight = this.isLightColor(this.currentCanvasColor || '#1a1a1a');
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
 
+        // Fill with background color first
+        ctx.fillStyle = this.currentCanvasColor || '#1a1a1a';
+        ctx.fillRect(0, 0, gridSize, gridSize);
+
+        // Draw grid lines on the tile
         ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
 
-        // Draw vertical lines
-        for (let x = 0; x <= canvas.width; x += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
-            ctx.stroke();
-        }
+        // Right edge (vertical line)
+        ctx.beginPath();
+        ctx.moveTo(gridSize - 0.5, 0);
+        ctx.lineTo(gridSize - 0.5, gridSize);
+        ctx.stroke();
 
-        // Draw horizontal lines
-        for (let y = 0; y <= canvas.height; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
-            ctx.stroke();
-        }
+        // Bottom edge (horizontal line)
+        ctx.beginPath();
+        ctx.moveTo(0, gridSize - 0.5);
+        ctx.lineTo(gridSize, gridSize - 0.5);
+        ctx.stroke();
 
-        // Apply as overlay
-        fabric.Image.fromURL(patternCanvas.toDataURL(), (img) => {
-            img.set({
-                selectable: false,
-                evented: false
-            });
-            canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+        // Create Fabric pattern and set as background
+        const pattern = new fabric.Pattern({
+            source: patternCanvas,
+            repeat: 'repeat'
         });
+
+        canvas.backgroundColor = pattern;
+        canvas.renderAll();
     }
 
-    // Draw dotted pattern
+    // Draw dotted pattern using tiling for endless canvas
     drawDottedPattern() {
         const dotSpacing = 25;
         const dotRadius = 1.5;
         const canvas = this.canvas;
 
-        // Create pattern using canvas context
+        // Create small tile pattern that will repeat
         const patternCanvas = document.createElement('canvas');
-        patternCanvas.width = canvas.width;
-        patternCanvas.height = canvas.height;
+        patternCanvas.width = dotSpacing;
+        patternCanvas.height = dotSpacing;
         const ctx = patternCanvas.getContext('2d');
+
+        // Fill with background color first
+        ctx.fillStyle = this.currentCanvasColor || '#1a1a1a';
+        ctx.fillRect(0, 0, dotSpacing, dotSpacing);
 
         // Determine dot color based on background
         const isLight = this.isLightColor(this.currentCanvasColor || '#1a1a1a');
-        const dotColor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+        const dotColor = isLight ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)';
 
+        // Draw single dot in center of tile
         ctx.fillStyle = dotColor;
+        ctx.beginPath();
+        ctx.arc(dotSpacing / 2, dotSpacing / 2, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Draw dots
-        for (let x = 0; x <= canvas.width; x += dotSpacing) {
-            for (let y = 0; y <= canvas.height; y += dotSpacing) {
-                ctx.beginPath();
-                ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        // Apply as overlay
-        fabric.Image.fromURL(patternCanvas.toDataURL(), (img) => {
-            img.set({
-                selectable: false,
-                evented: false
-            });
-            canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+        // Create Fabric pattern and set as background
+        const pattern = new fabric.Pattern({
+            source: patternCanvas,
+            repeat: 'repeat'
         });
+
+        canvas.backgroundColor = pattern;
+        canvas.renderAll();
     }
 
     // Apply remote theme change

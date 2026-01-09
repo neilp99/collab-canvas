@@ -557,6 +557,110 @@ input[type="password"]::placeholder {
     border-radius: calc(var(--radius-sm) - 2px);
 }
 
+/* Bottom Toolbar */
+.bottom-toolbar {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    z-index: 150;
+}
+
+.bottom-toolbar .tool-btn {
+    width: 44px;
+    height: 44px;
+}
+
+.bottom-toolbar .divider-vertical {
+    height: 28px;
+    margin: 0 var(--spacing-xs);
+}
+
+/* Shapes Dropdown */
+.shapes-dropdown {
+    position: relative;
+}
+
+.shapes-trigger {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-right: var(--spacing-xs);
+}
+
+.shapes-trigger .dropdown-arrow {
+    opacity: 0.6;
+    transition: transform var(--transition-fast);
+}
+
+.shapes-dropdown:hover .shapes-trigger .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.shapes-menu {
+    position: absolute;
+    bottom: calc(100% + var(--spacing-sm));
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(10px);
+    transition: all var(--transition-fast);
+    min-width: 140px;
+}
+
+.shapes-dropdown:hover .shapes-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.shape-option {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+    font-size: 0.875rem;
+}
+
+.shape-option:hover {
+    background: var(--bg-darker);
+    color: var(--text-primary);
+}
+
+.shape-option.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.shape-option span {
+    flex: 1;
+    text-align: left;
+}
+
 /* Canvas Container */
 #canvas-container {
     flex: 1;
