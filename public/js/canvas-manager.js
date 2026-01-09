@@ -30,6 +30,9 @@ class CanvasManager {
         // Setup pan and zoom controls
         this.setupPanZoom();
 
+        // Restore viewport state from localStorage
+        this.restoreViewportState();
+
         // Listen to canvas events
         this.setupCanvasEvents();
     }
@@ -55,7 +58,12 @@ class CanvasManager {
     }
 
     setupPanZoom() {
-        // Enable panning with Space key + drag
+        // Figma-like pan and zoom behavior
+        // - Scroll/trackpad: Pan the canvas
+        // - Ctrl/Cmd + Scroll: Zoom
+        // - Space + Drag: Pan (alternative method)
+
+        // Enable panning with Space key + drag (alternative method)
         this.canvas.on('mouse:down', (opt) => {
             const evt = opt.e;
             if (evt.spaceKey || evt.altKey) {
@@ -85,27 +93,52 @@ class CanvasManager {
             this.canvas.defaultCursor = 'default';
         });
 
-        // Enable zooming with mouse wheel
+        // Figma-like wheel behavior: Pan or Zoom based on Ctrl/Cmd key
         this.canvas.on('mouse:wheel', (opt) => {
-            const delta = opt.e.deltaY;
-            let zoom = this.canvas.getZoom();
-            zoom *= 0.999 ** delta;
-            if (zoom > 20) zoom = 20; // Max zoom in
-            if (zoom < 0.1) zoom = 0.1; // Max zoom out
+            const evt = opt.e;
+            evt.preventDefault();
+            evt.stopPropagation();
 
-            this.canvas.zoomToPoint(
-                { x: opt.e.offsetX, y: opt.e.offsetY },
-                zoom
-            );
+            // Determine if this is a zoom gesture (Ctrl/Cmd key pressed)
+            const isZoomGesture = evt.ctrlKey || evt.metaKey;
 
-            opt.e.preventDefault();
-            opt.e.stopPropagation();
+            if (isZoomGesture) {
+                // ZOOM: Ctrl/Cmd + Scroll
+                const delta = evt.deltaY;
+                let zoom = this.canvas.getZoom();
 
-            // Update zoom display
-            this.updateZoomDisplay(zoom);
+                // More gradual zoom similar to Figma
+                zoom *= 0.999 ** delta;
+                if (zoom > 20) zoom = 20; // Max zoom in
+                if (zoom < 0.1) zoom = 0.1; // Max zoom out
+
+                this.canvas.zoomToPoint(
+                    { x: evt.offsetX, y: evt.offsetY },
+                    zoom
+                );
+
+                // Update zoom display
+                this.updateZoomDisplay(zoom);
+
+                // Save viewport state
+                this.saveViewportState();
+            } else {
+                // PAN: Regular scroll (like Figma)
+                const vpt = this.canvas.viewportTransform;
+
+                // Pan based on scroll direction
+                // deltaX for horizontal scroll, deltaY for vertical scroll
+                vpt[4] -= evt.deltaX;
+                vpt[5] -= evt.deltaY;
+
+                this.canvas.requestRenderAll();
+
+                // Save viewport state
+                this.saveViewportState();
+            }
         });
 
-        // Track space key
+        // Track space key for alternative pan mode
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && !e.repeat) {
                 e.preventDefault();
@@ -124,6 +157,44 @@ class CanvasManager {
         const percentage = Math.round(zoom * 100);
         // You can add a zoom indicator in the UI here
         console.log(`Zoom: ${percentage}%`);
+    }
+
+    // Save viewport state to localStorage
+    saveViewportState() {
+        const roomId = this.socketManager?.getCurrentRoom();
+        if (!roomId) return;
+
+        const state = {
+            zoom: this.canvas.getZoom(),
+            viewportTransform: this.canvas.viewportTransform
+        };
+
+        try {
+            localStorage.setItem(`canvas_viewport_${roomId}`, JSON.stringify(state));
+        } catch (e) {
+            console.error('Failed to save viewport state:', e);
+        }
+    }
+
+    // Restore viewport state from localStorage
+    restoreViewportState() {
+        const roomId = this.socketManager?.getCurrentRoom();
+        if (!roomId) return;
+
+        try {
+            const saved = localStorage.getItem(`canvas_viewport_${roomId}`);
+            if (saved) {
+                const state = JSON.parse(saved);
+                if (state.zoom && state.viewportTransform) {
+                    this.canvas.setZoom(state.zoom);
+                    this.canvas.setViewportTransform(state.viewportTransform);
+                    this.canvas.requestRenderAll();
+                    console.log(`Restored viewport: zoom ${Math.round(state.zoom * 100)}%`);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to restore viewport state:', e);
+        }
     }
 
     // IMPORTANT: Independent Canvas Views Architecture
