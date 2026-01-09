@@ -2,8 +2,11 @@ services:
   - type: web
     name: collab-canvas
     env: node
+    region: oregon  # or your preferred region: oregon, frankfurt, singapore, etc.
+    branch: main  # Auto-deploy from main branch
     buildCommand: npm install
     startCommand: npm start
+    autoDeploy: true  # Enable automatic deployment on git push
     envVars:
       - key: NODE_ENV
         value: production
