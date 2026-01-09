@@ -140,7 +140,16 @@ class App {
         if (confirm('Are you sure you want to leave this room?')) {
             // Stop video/audio
             if (this.videoManager) {
-                this.videoManager.cleanup();
+                this.videoManager.disableCamera();
+            }
+
+            // Clear chat messages
+            if (this.chatManager) {
+                this.chatManager.clearMessages();
+                // Close chat panel if open
+                if (this.chatManager.isPanelOpen) {
+                    this.chatManager.toggleChatPanel();
+                }
             }
 
             // Leave room via socket
@@ -149,6 +158,7 @@ class App {
             // Reset state
             this.canvasManager = null;
             this.videoManager = null;
+            this.chatManager = null;
             this.connectedUsers.clear();
             this.remoteCursors.clear();
             this.roomPassword = null;
