@@ -304,6 +304,40 @@
             <!-- Videos will be added dynamically -->
         </div>
 
+        <!-- Text Formatting Toolbar (for sticky notes) -->
+        <div id="text-format-toolbar" class="text-format-toolbar" style="display: none;">
+            <button class="format-btn" data-format="bold" title="Bold (Ctrl+B)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 2h5c1.7 0 3 1.3 3 3s-1.3 3-3 3H4V2z" stroke="currentColor" stroke-width="1.5"
+                        fill="none" />
+                    <path d="M4 8h6c1.7 0 3 1.3 3 3s-1.3 3-3 3H4V8z" stroke="currentColor" stroke-width="1.5"
+                        fill="none" />
+                </svg>
+            </button>
+            <button class="format-btn" data-format="italic" title="Italic (Ctrl+I)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 2h6M4 14h6M9 2L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </button>
+            <button class="format-btn" data-format="underline" title="Underline (Ctrl+U)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 2v6c0 2.2 1.8 4 4 4s4-1.8 4-4V2M3 14h10" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+            </button>
+            <div class="divider-vertical"></div>
+            <select class="format-select" id="font-size-select" title="Font Size">
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16" selected>16</option>
+                <option value="18">18</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+                <option value="28">28</option>
+                <option value="32">32</option>
+            </select>
+        </div>
+
         <!-- Toast Notifications -->
         <div id="toast-container"></div>
     </div>

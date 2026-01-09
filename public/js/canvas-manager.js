@@ -140,6 +140,12 @@ class CanvasManager {
 
         // Track space key for alternative pan mode
         document.addEventListener('keydown', (e) => {
+            // Don't prevent space if editing text
+            const activeObject = this.canvas.getActiveObject();
+            if (activeObject && activeObject.type === 'i-text' && activeObject.isEditing) {
+                return; // Allow space key in text editing
+            }
+
             if (e.code === 'Space' && !e.repeat) {
                 e.preventDefault();
                 this.canvas.defaultCursor = 'grab';
@@ -236,6 +242,28 @@ class CanvasManager {
             if (obj.id) {
                 this.socketManager.sendCanvasObjectRemoved(obj.id);
             }
+        });
+
+        // Selection changed - show/hide formatting toolbar
+        this.canvas.on('selection:created', (e) => {
+            this.updateFormattingToolbar(e.selected[0]);
+        });
+
+        this.canvas.on('selection:updated', (e) => {
+            this.updateFormattingToolbar(e.selected[0]);
+        });
+
+        this.canvas.on('selection:cleared', () => {
+            this.hideFormattingToolbar();
+        });
+
+        // Text editing events
+        this.canvas.on('text:editing:entered', (e) => {
+            this.updateFormattingToolbar(e.target);
+        });
+
+        this.canvas.on('text:selection:changed', (e) => {
+            this.updateFormattingToolbar(e.target);
         });
 
         // Path created (free drawing)
@@ -1072,5 +1100,93 @@ class CanvasManager {
         } else {
             this.isReceivingRemoteChanges = false;
         }
+    }
+
+    // Show/update formatting toolbar for sticky note text
+    updateFormattingToolbar(obj) {
+        if (!obj || obj.type !== 'i-text' || !obj.isSticky) {
+            this.hideFormattingToolbar();
+            return;
+        }
+
+        const toolbar = document.getElementById('text-format-toolbar');
+        if (!toolbar) return;
+
+        // Show toolbar
+        toolbar.style.display = 'flex';
+
+        // Update button states based on current selection
+        const selectionStyles = obj.getSelectionStyles();
+        const currentStyle = selectionStyles[0] || {};
+
+        // Update bold button
+        const boldBtn = toolbar.querySelector('[data-format="bold"]');
+        if (boldBtn) {
+            boldBtn.classList.toggle('active', currentStyle.fontWeight === 'bold');
+        }
+
+        // Update italic button
+        const italicBtn = toolbar.querySelector('[data-format="italic"]');
+        if (italicBtn) {
+            italicBtn.classList.toggle('active', currentStyle.fontStyle === 'italic');
+        }
+
+        // Update underline button
+        const underlineBtn = toolbar.querySelector('[data-format="underline"]');
+        if (underlineBtn) {
+            underlineBtn.classList.toggle('active', currentStyle.underline === true);
+        }
+
+        // Update font size selector
+        const fontSizeSelect = document.getElementById('font-size-select');
+        if (fontSizeSelect) {
+            const currentFontSize = currentStyle.fontSize || obj.fontSize || 16;
+            fontSizeSelect.value = currentFontSize;
+        }
+    }
+
+    hideFormattingToolbar() {
+        const toolbar = document.getElementById('text-format-toolbar');
+        if (toolbar) {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    // Apply text formatting
+    applyTextFormat(format, value) {
+        const activeObject = this.canvas.getActiveObject();
+        if (!activeObject || activeObject.type !== 'i-text') return;
+
+        const start = activeObject.selectionStart;
+        const end = activeObject.selectionEnd;
+
+        if (format === 'bold') {
+            const currentWeight = activeObject.getSelectionStyles()[0]?.fontWeight;
+            activeObject.setSelectionStyles({
+                fontWeight: currentWeight === 'bold' ? 'normal' : 'bold'
+            }, start, end);
+        } else if (format === 'italic') {
+            const currentStyle = activeObject.getSelectionStyles()[0]?.fontStyle;
+            activeObject.setSelectionStyles({
+                fontStyle: currentStyle === 'italic' ? 'normal' : 'italic'
+            }, start, end);
+        } else if (format === 'underline') {
+            const currentUnderline = activeObject.getSelectionStyles()[0]?.underline;
+            activeObject.setSelectionStyles({
+                underline: !currentUnderline
+            }, start, end);
+        } else if (format === 'fontSize') {
+            activeObject.setSelectionStyles({
+                fontSize: parseInt(value)
+            }, start, end);
+        }
+
+        activeObject.setCoords();
+        this.canvas.renderAll();
+        this.updateFormattingToolbar(activeObject);
+
+        // Send update to other users
+        const serialized = this.serializeObject(activeObject);
+        this.socketManager.sendCanvasObjectModified(serialized);
     }
 }

@@ -480,10 +480,42 @@ class App {
             });
         });
 
+        // Text formatting toolbar buttons
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const format = btn.dataset.format;
+                this.canvasManager.applyTextFormat(format);
+            });
+        });
+
+        // Font size selector
+        const fontSizeSelect = document.getElementById('font-size-select');
+        if (fontSizeSelect) {
+            fontSizeSelect.addEventListener('change', (e) => {
+                this.canvasManager.applyTextFormat('fontSize', e.target.value);
+            });
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             // Ignore if typing in input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            // Text formatting shortcuts (Ctrl/Cmd + B/I/U)
+            const activeObject = this.canvasManager.canvas?.getActiveObject();
+            if (activeObject && activeObject.type === 'i-text' && activeObject.isEditing) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    this.canvasManager.applyTextFormat('bold');
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                    e.preventDefault();
+                    this.canvasManager.applyTextFormat('italic');
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+                    e.preventDefault();
+                    this.canvasManager.applyTextFormat('underline');
+                }
+                return;
+            }
 
             if (e.key === 'p' || e.key === 'P') {
                 document.querySelector('[data-tool="pen"]').click();

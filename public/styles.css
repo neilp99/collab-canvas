@@ -661,6 +661,83 @@ input[type="password"]::placeholder {
     text-align: left;
 }
 
+/* Text Formatting Toolbar */
+.text-format-toolbar {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.format-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.format-btn:hover {
+    background: var(--bg-darker);
+    color: var(--text-primary);
+}
+
+.format-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.format-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-darker);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.format-select:hover {
+    background: var(--bg);
+    border-color: var(--primary);
+}
+
+.format-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
 /* Canvas Container */
 #canvas-container {
     flex: 1;
@@ -892,6 +969,7 @@ input[type="password"]::placeholder {
         min-width: 44px;
     }
 }
+
 /* Chat Panel */
 .chat-panel {
     position: fixed;
@@ -1069,9 +1147,19 @@ input[type="password"]::placeholder {
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
 }
 
 /* Mobile optimization for chat */
@@ -1080,7 +1168,7 @@ input[type="password"]::placeholder {
         width: 100%;
         right: -100%;
     }
-    
+
     .chat-message {
         max-width: 90%;
     }
