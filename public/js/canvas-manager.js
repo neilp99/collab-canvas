@@ -179,6 +179,9 @@ class CanvasManager {
     setTool(tool) {
         this.currentTool = tool;
 
+        // Clear any active shape drawing listeners
+        this.clearShapeDrawingListeners();
+
         if (tool === 'pen') {
             this.canvas.isDrawingMode = true;
             this.canvas.selection = false;
@@ -194,6 +197,38 @@ class CanvasManager {
         } else if (tool === 'sticky') {
             this.canvas.isDrawingMode = false;
             this.canvas.selection = true;
+        } else if (tool === 'rectangle') {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = false;
+            this.enableRectangleTool();
+        } else if (tool === 'circle') {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = false;
+            this.enableCircleTool();
+        } else if (tool === 'line') {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = false;
+            this.enableLineTool();
+        } else if (tool === 'triangle') {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = false;
+            this.enableTriangleTool();
+        } else if (tool === 'select') {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = true;
+        }
+    }
+
+    // Clear shape drawing listeners
+    clearShapeDrawingListeners() {
+        if (this.shapeMouseDown) {
+            this.canvas.off('mouse:down', this.shapeMouseDown);
+        }
+        if (this.shapeMouseMove) {
+            this.canvas.off('mouse:move', this.shapeMouseMove);
+        }
+        if (this.shapeMouseUp) {
+            this.canvas.off('mouse:up', this.shapeMouseUp);
         }
     }
 
@@ -443,6 +478,257 @@ class CanvasManager {
 
         this.canvas.setActiveObject(group);
         this.canvas.renderAll();
+    }
+
+    // Enable rectangle drawing tool
+    enableRectangleTool() {
+        let rect, isDown, origX, origY;
+
+        this.shapeMouseDown = (o) => {
+            isDown = true;
+            const pointer = this.canvas.getPointer(o.e);
+            origX = pointer.x;
+            origY = pointer.y;
+
+            rect = new fabric.Rect({
+                left: origX,
+                top: origY,
+                width: 0,
+                height: 0,
+                fill: 'transparent',
+                stroke: this.currentColor,
+                strokeWidth: this.currentWidth,
+                selectable: true,
+                hasControls: true
+            });
+
+            rect.id = generateId();
+            this.canvas.add(rect);
+        };
+
+        this.shapeMouseMove = (o) => {
+            if (!isDown) return;
+            const pointer = this.canvas.getPointer(o.e);
+
+            if (pointer.x < origX) {
+                rect.set({ left: pointer.x });
+            }
+            if (pointer.y < origY) {
+                rect.set({ top: pointer.y });
+            }
+
+            rect.set({
+                width: Math.abs(pointer.x - origX),
+                height: Math.abs(pointer.y - origY)
+            });
+
+            this.canvas.renderAll();
+        };
+
+        this.shapeMouseUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            rect.setCoords();
+
+            // Only sync if shape has size
+            if (rect.width > 2 && rect.height > 2) {
+                const serialized = this.serializeObject(rect);
+                this.socketManager.sendCanvasObjectAdded(serialized);
+            } else {
+                // Remove tiny shapes
+                this.canvas.remove(rect);
+            }
+        };
+
+        this.canvas.on('mouse:down', this.shapeMouseDown);
+        this.canvas.on('mouse:move', this.shapeMouseMove);
+        this.canvas.on('mouse:up', this.shapeMouseUp);
+    }
+
+    // Enable circle drawing tool
+    enableCircleTool() {
+        let circle, isDown, origX, origY;
+
+        this.shapeMouseDown = (o) => {
+            isDown = true;
+            const pointer = this.canvas.getPointer(o.e);
+            origX = pointer.x;
+            origY = pointer.y;
+
+            circle = new fabric.Circle({
+                left: origX,
+                top: origY,
+                radius: 0,
+                fill: 'transparent',
+                stroke: this.currentColor,
+                strokeWidth: this.currentWidth,
+                selectable: true,
+                hasControls: true
+            });
+
+            circle.id = generateId();
+            this.canvas.add(circle);
+        };
+
+        this.shapeMouseMove = (o) => {
+            if (!isDown) return;
+            const pointer = this.canvas.getPointer(o.e);
+
+            const radius = Math.sqrt(
+                Math.pow(pointer.x - origX, 2) +
+                Math.pow(pointer.y - origY, 2)
+            ) / 2;
+
+            circle.set({ radius: radius });
+            circle.set({
+                left: origX - radius,
+                top: origY - radius
+            });
+
+            this.canvas.renderAll();
+        };
+
+        this.shapeMouseUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            circle.setCoords();
+
+            // Only sync if shape has size
+            if (circle.radius > 2) {
+                const serialized = this.serializeObject(circle);
+                this.socketManager.sendCanvasObjectAdded(serialized);
+            } else {
+                // Remove tiny shapes
+                this.canvas.remove(circle);
+            }
+        };
+
+        this.canvas.on('mouse:down', this.shapeMouseDown);
+        this.canvas.on('mouse:move', this.shapeMouseMove);
+        this.canvas.on('mouse:up', this.shapeMouseUp);
+    }
+
+    // Enable line drawing tool
+    enableLineTool() {
+        let line, isDown, origX, origY;
+
+        this.shapeMouseDown = (o) => {
+            isDown = true;
+            const pointer = this.canvas.getPointer(o.e);
+            origX = pointer.x;
+            origY = pointer.y;
+
+            line = new fabric.Line([origX, origY, origX, origY], {
+                stroke: this.currentColor,
+                strokeWidth: this.currentWidth,
+                selectable: true,
+                hasControls: true
+            });
+
+            line.id = generateId();
+            this.canvas.add(line);
+        };
+
+        this.shapeMouseMove = (o) => {
+            if (!isDown) return;
+            const pointer = this.canvas.getPointer(o.e);
+
+            line.set({
+                x2: pointer.x,
+                y2: pointer.y
+            });
+
+            this.canvas.renderAll();
+        };
+
+        this.shapeMouseUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            line.setCoords();
+
+            // Only sync if line has length
+            const length = Math.sqrt(
+                Math.pow(line.x2 - line.x1, 2) +
+                Math.pow(line.y2 - line.y1, 2)
+            );
+
+            if (length > 2) {
+                const serialized = this.serializeObject(line);
+                this.socketManager.sendCanvasObjectAdded(serialized);
+            } else {
+                // Remove tiny lines
+                this.canvas.remove(line);
+            }
+        };
+
+        this.canvas.on('mouse:down', this.shapeMouseDown);
+        this.canvas.on('mouse:move', this.shapeMouseMove);
+        this.canvas.on('mouse:up', this.shapeMouseUp);
+    }
+
+    // Enable triangle drawing tool
+    enableTriangleTool() {
+        let triangle, isDown, origX, origY;
+
+        this.shapeMouseDown = (o) => {
+            isDown = true;
+            const pointer = this.canvas.getPointer(o.e);
+            origX = pointer.x;
+            origY = pointer.y;
+
+            triangle = new fabric.Triangle({
+                left: origX,
+                top: origY,
+                width: 0,
+                height: 0,
+                fill: 'transparent',
+                stroke: this.currentColor,
+                strokeWidth: this.currentWidth,
+                selectable: true,
+                hasControls: true
+            });
+
+            triangle.id = generateId();
+            this.canvas.add(triangle);
+        };
+
+        this.shapeMouseMove = (o) => {
+            if (!isDown) return;
+            const pointer = this.canvas.getPointer(o.e);
+
+            if (pointer.x < origX) {
+                triangle.set({ left: pointer.x });
+            }
+            if (pointer.y < origY) {
+                triangle.set({ top: pointer.y });
+            }
+
+            triangle.set({
+                width: Math.abs(pointer.x - origX),
+                height: Math.abs(pointer.y - origY)
+            });
+
+            this.canvas.renderAll();
+        };
+
+        this.shapeMouseUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            triangle.setCoords();
+
+            // Only sync if shape has size
+            if (triangle.width > 2 && triangle.height > 2) {
+                const serialized = this.serializeObject(triangle);
+                this.socketManager.sendCanvasObjectAdded(serialized);
+            } else {
+                // Remove tiny shapes
+                this.canvas.remove(triangle);
+            }
+        };
+
+        this.canvas.on('mouse:down', this.shapeMouseDown);
+        this.canvas.on('mouse:move', this.shapeMouseMove);
+        this.canvas.on('mouse:up', this.shapeMouseUp);
     }
 
     // Clear canvas
