@@ -18,9 +18,17 @@ class CanvasManager {
         this.currentCanvasColor = '#1a1a1a';
         this.isReceivingRemoteChanges = false;
 
+        // Pan and zoom state
+        this.isPanning = false;
+        this.lastPosX = 0;
+        this.lastPosY = 0;
+
         // Resize canvas to fill container
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
+
+        // Setup pan and zoom controls
+        this.setupPanZoom();
 
         // Listen to canvas events
         this.setupCanvasEvents();
@@ -31,10 +39,86 @@ class CanvasManager {
         const width = container.clientWidth;
         const height = container.clientHeight;
 
+        // Set display size (viewport)
         this.canvas.setDimensions({
             width: width,
             height: height
         });
+
+        // Don't resize the actual canvas - keep it large for endless feel
+        // This is set in constructor
+    }
+
+    setupPanZoom() {
+        // Enable panning with Space key + drag
+        this.canvas.on('mouse:down', (opt) => {
+            const evt = opt.e;
+            if (evt.spaceKey || evt.altKey) {
+                this.isPanning = true;
+                this.canvas.selection = false;
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+                this.canvas.defaultCursor = 'grabbing';
+            }
+        });
+
+        this.canvas.on('mouse:move', (opt) => {
+            if (this.isPanning) {
+                const evt = opt.e;
+                const vpt = this.canvas.viewportTransform;
+                vpt[4] += evt.clientX - this.lastPosX;
+                vpt[5] += evt.clientY - this.lastPosY;
+                this.canvas.requestRenderAll();
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+            }
+        });
+
+        this.canvas.on('mouse:up', () => {
+            this.isPanning = false;
+            this.canvas.selection = true;
+            this.canvas.defaultCursor = 'default';
+        });
+
+        // Enable zooming with mouse wheel
+        this.canvas.on('mouse:wheel', (opt) => {
+            const delta = opt.e.deltaY;
+            let zoom = this.canvas.getZoom();
+            zoom *= 0.999 ** delta;
+            if (zoom > 20) zoom = 20; // Max zoom in
+            if (zoom < 0.1) zoom = 0.1; // Max zoom out
+
+            this.canvas.zoomToPoint(
+                { x: opt.e.offsetX, y: opt.e.offsetY },
+                zoom
+            );
+
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+
+            // Update zoom display
+            this.updateZoomDisplay(zoom);
+        });
+
+        // Track space key
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                e.preventDefault();
+                this.canvas.defaultCursor = 'grab';
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                this.canvas.defaultCursor = 'default';
+            }
+        });
+    }
+
+    updateZoomDisplay(zoom) {
+        const percentage = Math.round(zoom * 100);
+        // You can add a zoom indicator in the UI here
+        console.log(`Zoom: ${percentage}%`);
     }
 
     setupCanvasEvents() {
