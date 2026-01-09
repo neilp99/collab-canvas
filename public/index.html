@@ -49,8 +49,9 @@
                         <input type="password" id="created-password" readonly value="">
                         <button class="icon-btn" id="toggle-password-btn" title="Show/Hide Password">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z" stroke="currentColor" stroke-width="1.5"/>
-                                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z"
+                                    stroke="currentColor" stroke-width="1.5" />
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" />
                             </svg>
                         </button>
                     </div>
@@ -81,7 +82,10 @@
                     </button>
                     <button id="leave-room-btn" class="icon-btn" title="Leave Room">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path
+                                d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6M11 11L14 8M14 8L11 5M14 8H6"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
                         </svg>
                     </button>
                 </div>
@@ -213,6 +217,39 @@
                             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                     </svg>
                 </button>
+                <button class="tool-btn" id="toggle-chat-btn" title="Toggle Chat">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H7L3 17V5Z"
+                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div id="chat-panel" class="chat-panel">
+            <div class="chat-header">
+                <h3>💬 Chat</h3>
+                <button class="icon-btn" onclick="document.getElementById('toggle-chat-btn').click()" title="Close">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div id="message-list" class="message-list">
+                <!-- Messages will be added dynamically -->
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+                <button id="send-message-btn" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M14 2L7 9M14 2L10 14L7 9M14 2L2 6L7 9" stroke="currentColor" stroke-width="1.5"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <div id="chat-input-error" class="input-error" style="display: none;"></div>
             </div>
         </div>
 
@@ -238,6 +275,7 @@
     <script src="js/socket-manager.js"></script>
     <script src="js/canvas-manager.js"></script>
     <script src="js/video-manager.js"></script>
+    <script src="js/chat-manager.js"></script>
     <script src="js/app.js"></script>
 </body>
 
