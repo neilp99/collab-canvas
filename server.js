@@ -45,6 +45,31 @@ io.on('connection', (socket) => {
         console.log(`Room created: ${roomId} with password by ${socket.id}`);
     });
 
+    // Validate room before joining (check room exists and password is correct)
+    socket.on('validate-room', ({ roomId, password }) => {
+        console.log(`Validating room ${roomId} for ${socket.id}`);
+        const room = rooms.get(roomId);
+
+        if (!room) {
+            console.log(`Room ${roomId} not found`);
+            socket.emit('room-validation-failed', {
+                message: 'Room not found'
+            });
+            return;
+        }
+
+        if (room.password !== password) {
+            console.log(`Incorrect password for room ${roomId}`);
+            socket.emit('room-validation-failed', {
+                message: 'Incorrect password'
+            });
+            return;
+        }
+
+        console.log(`Room ${roomId} validation successful`);
+        socket.emit('room-validation-success');
+    });
+
     // Join an existing room
     socket.on('join-room', ({ roomId, password, userData }) => {
         const room = rooms.get(roomId);

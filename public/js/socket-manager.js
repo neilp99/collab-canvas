@@ -112,6 +112,15 @@ class SocketManager {
         this.socket.on('chat:message', (data) => {
             this.trigger('chat:message', data);
         });
+
+        // Room validation events
+        this.socket.on('room-validation-success', () => {
+            this.trigger('room-validation-success');
+        });
+
+        this.socket.on('room-validation-failed', (data) => {
+            this.trigger('room-validation-failed', data);
+        });
     }
 
     // Create a new room
@@ -140,6 +149,11 @@ class SocketManager {
             this.socket.emit('leave-room');
             this.currentRoom = null;
         }
+    }
+
+    // Validate room before joining
+    validateRoom(roomId, password) {
+        this.socket.emit('validate-room', { roomId, password });
     }
 
     // Send canvas object added event

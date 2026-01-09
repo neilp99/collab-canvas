@@ -66,20 +66,25 @@ class App {
             this.showUserInfo();
         });
 
-        // Join room button
+        // Join room button - validate room first
         joinBtn.addEventListener('click', () => {
             const roomId = roomIdInput.value.trim().toUpperCase();
             const password = roomPasswordInput.value.trim().toUpperCase();
 
-            if (roomId.length === 6) {
-                if (password.length === 6) {
-                    this.showUserInfo();
-                } else {
-                    showToast('Please enter the 6-character room password', 'error');
-                }
-            } else {
+            if (roomId.length !== 6) {
                 showToast('Please enter a valid 6-character room ID', 'error');
+                return;
             }
+
+            if (password.length !== 6) {
+                showToast('Please enter the 6-character room password', 'error');
+                return;
+            }
+
+            // Validate room with server before showing username entry
+            this.pendingRoomId = roomId;
+            this.pendingPassword = password;
+            this.socketManager.validateRoom(roomId, password);
         });
 
         // Enter room button
@@ -210,6 +215,19 @@ class App {
             // Show user-friendly error message
             const errorMessage = data.message || 'An error occurred';
             showToast(errorMessage, 'error');
+        });
+
+        // Room validation success - show username entry
+        this.socketManager.on('room-validation-success', () => {
+            console.log('Room validation successful');
+            this.showUserInfo();
+        });
+
+        // Room validation failed - show error on login screen
+        this.socketManager.on('room-validation-failed', (data) => {
+            console.log('Room validation failed:', data.message);
+            showToast(data.message, 'error');
+            // User stays on connection screen
         });
 
         // Room joined
