@@ -619,7 +619,7 @@ class CanvasManager {
     createStickyNote(x, y) {
         const stickyId = generateId();
 
-        // Create sticky note group
+        // Create background rectangle
         const rect = new fabric.Rect({
             width: 200,
             height: 150,
@@ -628,38 +628,83 @@ class CanvasManager {
             strokeWidth: 2,
             rx: 8,
             ry: 8,
-            shadow: '0 4px 12px rgba(0,0,0,0.3)'
+            shadow: '0 4px 12px rgba(0,0,0,0.3)',
+            left: x || 100,
+            top: y || 100,
+            id: stickyId + '_bg',
+            selectable: false,
+            evented: false
         });
 
+        // Create editable text
         const text = new fabric.IText('Double-click to edit', {
             fontSize: 16,
             fill: '#000',
             fontFamily: 'Inter, sans-serif',
+            left: (x || 100) + 10,
+            top: (y || 100) + 10,
             width: 180,
-            top: 10,
-            left: 10
+            id: stickyId + '_text',
+            editable: true,
+            selectable: true,
+            stickyNoteId: stickyId,
+            isSticky: true
         });
 
-        const group = new fabric.Group([rect, text], {
-            left: x || 100,
-            top: y || 100,
-            id: stickyId,
-            isSticky: true, // Protect from eraser
-            selectable: true,
-            hasControls: true,
-            lockRotation: false
-        });
+        // Track the sticky note components
+        rect.stickyNoteId = stickyId;
+        rect.isSticky = true;
 
         this.isReceivingRemoteChanges = true;
-        this.canvas.add(group);
+        this.canvas.add(rect);
+        this.canvas.add(text);
         this.isReceivingRemoteChanges = false;
 
         // Send to other users
-        const serialized = this.serializeObject(group);
-        this.socketManager.sendCanvasObjectAdded(serialized);
+        const rectSerialized = this.serializeObject(rect);
+        const textSerialized = this.serializeObject(text);
+        this.socketManager.sendCanvasObjectAdded(rectSerialized);
+        this.socketManager.sendCanvasObjectAdded(textSerialized);
 
-        this.canvas.setActiveObject(group);
+        // Select the text for immediate editing
+        this.canvas.setActiveObject(text);
         this.canvas.renderAll();
+
+        // Setup event handlers for moving together
+        this.setupStickyNoteHandlers(rect, text, stickyId);
+    }
+
+    // Setup handlers to keep sticky note text and background together
+    setupStickyNoteHandlers(rect, text, stickyId) {
+        // When text moves, move the background
+        text.on('moving', () => {
+            if (!this.isReceivingRemoteChanges) {
+                rect.set({
+                    left: text.left - 10,
+                    top: text.top - 10
+                });
+                this.canvas.renderAll();
+            }
+        });
+
+        // When text is modified, update its position relative to background
+        text.on('modified', () => {
+            if (!this.isReceivingRemoteChanges) {
+                text.set({
+                    left: rect.left + 10,
+                    top: rect.top + 10
+                });
+                this.canvas.renderAll();
+            }
+        });
+
+        // Enable double-click to edit
+        text.on('mousedblclick', () => {
+            if (!text.isEditing) {
+                text.enterEditing();
+                text.selectAll();
+            }
+        });
     }
 
     // Enable rectangle drawing tool
