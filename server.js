@@ -157,6 +157,16 @@ io.on('connection', (socket) => {
         socket.to(currentRoom).emit('theme-change', data);
     });
 
+    // Chat message
+    socket.on('chat:message', (data) => {
+        if (!currentRoom) return;
+
+        console.log(`[Chat] Message from ${socket.id} (${currentUser?.name}):`, data.text);
+
+        // Broadcast message to all other users in the room
+        socket.to(currentRoom).emit('chat:message', data);
+    });
+
     // Camera enabled notification
     socket.on('camera-enabled', () => {
         if (!currentRoom) return;

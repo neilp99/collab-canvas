@@ -308,6 +308,9 @@ class App {
         const videoGrid = document.getElementById('video-grid');
         this.videoManager = new VideoManager(videoGrid, this.socketManager);
 
+        // Initialize Chat Manager
+        this.chatManager = new ChatManager(this.socketManager);
+
         // Setup UI event listeners
         this.setupUIListeners();
 
