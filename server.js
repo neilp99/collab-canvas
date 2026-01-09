@@ -33,12 +33,15 @@ io.on('connection', (socket) => {
 
         socket.join(roomId);
 
-        // Initialize room data
+        // Initialize room data with persistence
         rooms.set(roomId, {
             users: new Map([[socket.id, currentUser]]),
             canvasState: { objects: [], theme: 'dark', canvasColor: '#1a1a1a' },
             password: password,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours from now
+            rejoinCounts: new Map(), // Track rejoin attempts per user
+            creatorId: socket.id // Track room creator
         });
 
         socket.emit('room-created', { roomId, password, user: currentUser });
@@ -54,6 +57,16 @@ io.on('connection', (socket) => {
             console.log(`Room ${roomId} not found`);
             socket.emit('room-validation-failed', {
                 message: 'Room not found'
+            });
+            return;
+        }
+
+        // Check if room has expired
+        if (Date.now() > room.expiresAt) {
+            console.log(`Room ${roomId} has expired`);
+            rooms.delete(roomId); // Clean up expired room
+            socket.emit('room-validation-failed', {
+                message: 'Room has expired (24 hour limit)'
             });
             return;
         }
@@ -75,7 +88,15 @@ io.on('connection', (socket) => {
         const room = rooms.get(roomId);
 
         if (!room) {
-            socket.emit('error', { message: 'Room not found' });
+            socket.emit('error', { message: 'Room not found or expired' });
+            return;
+        }
+
+        // Check if room has expired
+        if (Date.now() > room.expiresAt) {
+            console.log(`Room ${roomId} has expired`);
+            rooms.delete(roomId);
+            socket.emit('error', { message: 'Room has expired (24 hour limit)' });
             return;
         }
 
@@ -85,18 +106,40 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Check rejoin count for this user (if they have a stored userId from before)
+        const userIdToTrack = userData.userId || socket.id;
+        const rejoinCount = room.rejoinCounts.get(userIdToTrack) || 0;
+
+        if (rejoinCount >= 3) {
+            console.log(`User ${userIdToTrack} exceeded rejoin limit for room ${roomId}`);
+            socket.emit('error', {
+                message: 'Maximum rejoin limit reached (3 attempts)'
+            });
+            return;
+        }
+
         currentRoom = roomId;
         currentUser = { id: socket.id, ...userData };
 
         socket.join(roomId);
         room.users.set(socket.id, currentUser);
 
+        // Track rejoin if user was in room before (not first join)
+        if (rejoinCount > 0 || room.rejoinCounts.has(userIdToTrack)) {
+            room.rejoinCounts.set(userIdToTrack, rejoinCount + 1);
+            console.log(`User ${userIdToTrack} rejoined room ${roomId} (attempt ${rejoinCount + 1}/3)`);
+        } else {
+            // First time joining, initialize counter
+            room.rejoinCounts.set(userIdToTrack, 0);
+        }
+
         // Send existing canvas state to new user
         socket.emit('room-joined', {
             roomId,
             user: currentUser,
             canvasState: room.canvasState,
-            users: Array.from(room.users.values())
+            users: Array.from(room.users.values()),
+            rejoinCount: room.rejoinCounts.get(userIdToTrack)
         });
 
         // Notify other users in the room
@@ -261,22 +304,25 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle disconnection
+    // User disconnects
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
 
         if (currentRoom) {
             const room = rooms.get(currentRoom);
             if (room) {
+                // Remove user from room
                 room.users.delete(socket.id);
 
                 // Notify other users
                 socket.to(currentRoom).emit('user-left', { userId: socket.id });
 
-                // Clean up empty rooms
+                // Don't delete empty rooms - keep for rejoining
+                // Room will be deleted when it expires (24 hours)
                 if (room.users.size === 0) {
-                    rooms.delete(currentRoom);
-                    console.log(`Room ${currentRoom} deleted (empty)`);
+                    console.log(`Room ${currentRoom} is now empty but will persist for rejoining (expires: ${new Date(room.expiresAt).toLocaleString()})`);
+                } else {
+                    console.log(`Room ${currentRoom} now has ${room.users.size} user(s)`);
                 }
             }
         }
@@ -297,6 +343,30 @@ function generateRoomPassword() {
     }
     return password;
 }
+
+// Periodic cleanup of expired rooms
+setInterval(() => {
+    const now = Date.now();
+    let expiredCount = 0;
+
+    for (const [roomId, room] of rooms) {
+        if (now > room.expiresAt) {
+            console.log(`[Cleanup] Deleting expired room: ${roomId} (created ${new Date(room.createdAt).toLocaleString()})`);
+            rooms.delete(roomId);
+            expiredCount++;
+        }
+    }
+
+    if (expiredCount > 0) {
+        console.log(`[Cleanup] Removed ${expiredCount} expired room(s). Active rooms: ${rooms.size}`);
+    }
+}, 60 * 60 * 1000); // Run every hour
+
+// Log active rooms count on startup
+console.log('[Server] Room persistence enabled:');
+console.log('- Room lifetime: 24 hours');
+console.log('- Max rejoin attempts: 3 per user');
+console.log('- Cleanup interval: Every hour');
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
