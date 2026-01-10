@@ -5,8 +5,8 @@
         "lib": [
             "ES2020"
         ],
-        "outDir": "./dist/server",
-        "rootDir": "./src/server",
+        "outDir": "./dist",
+        "rootDir": "./src",
         "skipLibCheck": true,
         /* Type checking */
         "strict": true,
