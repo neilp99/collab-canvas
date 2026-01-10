@@ -10,7 +10,7 @@
         "build": "npm run build:client && npm run build:server",
         "build:client": "vite build",
         "build:server": "tsc -p tsconfig.server.json",
-        "start": "node ./dist/server/server.js",
+        "start": "cd .. && node dist/server/server.js || node dist/server/server.js",
         "preview": "vite preview"
     },
     "keywords": [
