@@ -4,9 +4,10 @@ services:
     env: node
     region: oregon  # or your preferred region: oregon, frankfurt, singapore, etc.
     branch: main  # Auto-deploy from main branch
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: npm start
     autoDeploy: true  # Enable automatic deployment on git push
+    staticPublishPath: ./dist/client
     envVars:
       - key: NODE_ENV
         value: production
