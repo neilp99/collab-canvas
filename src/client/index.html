@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CollabCanvas - Real-time Collaborative Whiteboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Room Connection Modal -->
+    <div id="connection-modal" class="modal">
+        <div class="modal-content">
+            <h1>🎨 CollabCanvas</h1>
+            <p class="subtitle">Real-time Collaborative Whiteboard</p>
+
+            <div class="connection-options">
+                <button id="create-room-btn" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Create New Room
+                </button>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <div class="join-room-section">
+                    <input type="text" id="room-id-input" placeholder="Enter Room ID" maxlength="6">
+                    <input type="password" id="room-password-input" placeholder="Room Password" maxlength="6">
+                    <button id="join-room-btn" class="btn btn-secondary">Join Room</button>
+                </div>
+            </div>
+
+            <div class="user-info-section" style="display: none;">
+                <input type="text" id="username-input" placeholder="Your Name" maxlength="20">
+                <button id="enter-room-btn" class="btn btn-primary">Enter Room</button>
+            </div>
+
+            <div class="room-password-section" style="display: none;">
+                <div class="password-display">
+                    <label>Room Password:</label>
+                    <div class="password-field">
+                        <input type="password" id="created-password" readonly value="">
+                        <button class="icon-btn" id="toggle-password-btn" title="Show/Hide Password">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z"
+                                    stroke="currentColor" stroke-width="1.5" />
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <p class="info-text">Share this password with your collaborators</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" style="display: none;">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="logo">
+                <h2>🎨 CollabCanvas</h2>
+            </div>
+
+            <div class="room-info">
+                <div class="room-id-display">
+                    <span class="label">Room ID:</span>
+                    <span id="current-room-id" class="room-id"></span>
+                    <button id="copy-link-btn" class="icon-btn" title="Copy room link">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M13.5 5.5L13.5 2.5C13.5 1.94772 13.0523 1.5 12.5 1.5L2.5 1.5C1.94772 1.5 1.5 1.94772 1.5 2.5L1.5 12.5C1.5 13.0523 1.94772 13.5 2.5 13.5L5.5 13.5M7.5 14.5L14.5 14.5C14.7761 14.5 15 14.2761 15 14L15 7C15 6.72386 14.7761 6.5 14.5 6.5L7.5 6.5C7.22386 6.5 7 6.72386 7 7L7 14C7 14.2761 7.22386 14.5 7.5 14.5Z"
+                                stroke="currentColor" stroke-width="1.5" />
+                        </svg>
+                    </button>
+                    <button id="leave-room-btn" class="icon-btn" title="Leave Room">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6M11 11L14 8M14 8L11 5M14 8H6"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="users-online">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M3 14C3 11.2386 5.23858 9 8 9C10.7614 9 13 11.2386 13 14" stroke="currentColor"
+                            stroke-width="1.5" />
+                    </svg>
+                    <span id="users-count">1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="tool-group">
+                <div class="color-picker">
+                    <input type="color" id="color-input" value="#ff6b6b">
+                    <div class="color-presets">
+                        <button class="color-preset" data-color="#ff6b6b" style="background: #ff6b6b;"></button>
+                        <button class="color-preset" data-color="#4ecdc4" style="background: #4ecdc4;"></button>
+                        <button class="color-preset" data-color="#45b7d1" style="background: #45b7d1;"></button>
+                        <button class="color-preset" data-color="#f9ca24" style="background: #f9ca24;"></button>
+                        <button class="color-preset" data-color="#a29bfe" style="background: #a29bfe;"></button>
+                    </div>
+                </div>
+
+                <div class="brush-size">
+                    <input type="range" id="brush-size" min="1" max="20" value="3">
+                    <span id="brush-size-value">3</span>
+                </div>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <div class="tool-group">
+                <button class="tool-btn" id="clear-canvas-btn" title="Clear Canvas">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M3 5H17M8 9V15M12 9V15M4 5L5 17C5 17.5523 5.44772 18 6 18H14C14.5523 18 15 17.5523 15 17L16 5"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <!-- Theme Selector -->
+            <div class="tool-group">
+                <div class="theme-selector">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                        <line x1="2" y1="10" x2="14" y2="10" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                        <line x1="6" y1="2" x2="6" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                        <line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                    </svg>
+                    <select id="theme-select">
+                        <option value="none">None</option>
+                        <option value="dotted">Dotted</option>
+                        <option value="grid">Grid</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <!-- Canvas Color Selection -->
+            <div class="tool-group">
+                <label style="font-size: 12px; color: #888; margin-right: 8px;">Canvas Color</label>
+                <input type="color" id="canvas-color-input" value="#1a1a1a" title="Canvas Background Color">
+                <div class="canvas-color-presets">
+                    <button class="canvas-color-preset active" data-canvas-color="#1a1a1a" style="background: #1a1a1a;"
+                        title="Dark"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#f5f5f5"
+                        style="background: #f5f5f5; border: 1px solid #ccc;" title="Light"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#2d3748" style="background: #2d3748;"
+                        title="Slate"></button>
+                    <button class="canvas-color-preset" data-canvas-color="#1e3a8a" style="background: #1e3a8a;"
+                        title="Navy"></button>
+                </div>
+            </div>
+
+            <div class="divider-vertical"></div>
+
+            <!-- Video Controls -->
+            <div class="tool-group media-controls">
+                <button class="tool-btn" id="toggle-camera-btn" title="Toggle Camera">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="5" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M14 8L18 6V14L14 12" stroke="currentColor" stroke-width="1.5"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <button class="tool-btn" id="toggle-mic-btn" title="Toggle Microphone">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5" />
+                        <path
+                            d="M4 10C4 13.3137 6.68629 16 10 16M10 16C13.3137 16 16 13.3137 16 10M10 16V18M10 18H7M10 18H13"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button class="tool-btn" id="toggle-chat-btn" title="Toggle Chat">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                            d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H7L3 17V5Z"
+                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Grid -->
+
+        <!-- Chat Panel -->
+        <div id="chat-panel" class="chat-panel">
+            <div class="chat-header">
+                <h3>💬 Chat</h3>
+                <button class="icon-btn" onclick="document.getElementById('toggle-chat-btn').click()" title="Close">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div id="message-list" class="message-list">
+                <!-- Messages will be added dynamically -->
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+                <button id="send-message-btn" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M14 2L7 9M14 2L10 14L7 9M14 2L2 6L7 9" stroke="currentColor" stroke-width="1.5"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <div id="chat-input-error" class="input-error" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="canvas-container">
+            <canvas id="main-canvas"></canvas>
+            <div id="cursors-overlay"></div>
+        </div>
+
+        <!-- Bottom Toolbar -->
+        <div class="bottom-toolbar">
+            <button class="tool-btn active" data-tool="pen" title="Pen (P)">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M13.5 3.5L16.5 6.5L7 16L3 17L4 13L13.5 3.5Z" stroke="currentColor" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M14 6L8 12M6 14L10 10M3 11L9 5L15 11L9 17L3 11Z" stroke="currentColor" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <button class="tool-btn" data-tool="sticky" title="Sticky Note (S)">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </button>
+
+            <div class="divider-vertical"></div>
+
+            <!-- Shapes Dropdown (Figma-style) -->
+            <div class="shapes-dropdown">
+                <button class="tool-btn shapes-trigger" title="Shapes">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="4" y="6" width="12" height="8" stroke="currentColor" stroke-width="1.5" fill="none" />
+                    </svg>
+                    <svg class="dropdown-arrow" width="8" height="8" viewBox="0 0 8 8" fill="none">
+                        <path d="M2 3L4 5L6 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <div class="shapes-menu">
+                    <button class="shape-option" data-tool="rectangle" title="Rectangle">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <rect x="4" y="6" width="12" height="8" stroke="currentColor" stroke-width="1.5"
+                                fill="none" />
+                        </svg>
+                        <span>Rectangle</span>
+                    </button>
+                    <button class="shape-option" data-tool="circle" title="Circle">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <circle cx="10" cy="10" r="5" stroke="currentColor" stroke-width="1.5" fill="none" />
+                        </svg>
+                        <span>Circle</span>
+                    </button>
+                    <button class="shape-option" data-tool="line" title="Line">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <line x1="5" y1="15" x2="15" y2="5" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        <span>Line</span>
+                    </button>
+                    <button class="shape-option" data-tool="triangle" title="Triangle">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 5L15 15H5L10 5Z" stroke="currentColor" stroke-width="1.5" fill="none"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span>Triangle</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Grid -->
+        <div id="video-grid" class="video-grid grid-0">
+            <!-- Videos will be added dynamically -->
+        </div>
+
+        <!-- Text Formatting Toolbar (for sticky notes) -->
+        <div id="text-format-toolbar" class="text-format-toolbar" style="display: none;">
+            <button class="format-btn" data-format="bold" title="Bold (Ctrl+B)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 2h5c1.7 0 3 1.3 3 3s-1.3 3-3 3H4V2z" stroke="currentColor" stroke-width="1.5"
+                        fill="none" />
+                    <path d="M4 8h6c1.7 0 3 1.3 3 3s-1.3 3-3 3H4V8z" stroke="currentColor" stroke-width="1.5"
+                        fill="none" />
+                </svg>
+            </button>
+            <button class="format-btn" data-format="italic" title="Italic (Ctrl+I)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 2h6M4 14h6M9 2L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </button>
+            <button class="format-btn" data-format="underline" title="Underline (Ctrl+U)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 2v6c0 2.2 1.8 4 4 4s4-1.8 4-4V2M3 14h10" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+            </button>
+            <div class="divider-vertical"></div>
+            <select class="format-select" id="font-size-select" title="Font Size">
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16" selected>16</option>
+                <option value="18">18</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+                <option value="28">28</option>
+                <option value="32">32</option>
+            </select>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <!-- Scripts - Loaded by Vite -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script type="module" src="/main.ts"></script>
+</body>
+
+</html>
