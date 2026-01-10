@@ -7,7 +7,6 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     autoDeploy: true  # Enable automatic deployment on git push
-    staticPublishPath: ./dist/client
     envVars:
       - key: NODE_ENV
         value: production
