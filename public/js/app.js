@@ -570,6 +570,123 @@ class App {
                 document.querySelector('[data-tool="sticky"]').click();
             }
         });
+
+        // Setup overflow menu (mobile)
+        this.setupOverflowMenu();
+    }
+
+    setupOverflowMenu() {
+        const overflowBtn = document.getElementById('toolbar-overflow-btn');
+        const overflowMenu = document.getElementById('overflow-menu');
+        const overflowOverlay = document.getElementById('overflow-overlay');
+        const overflowClose = document.getElementById('overflow-menu-close');
+
+        if (!overflowBtn || !overflowMenu) return;
+
+        // Toggle menu
+        const toggleMenu = () => {
+            const isActive = overflowMenu.classList.contains('active');
+            if (isActive) {
+                overflowMenu.classList.remove('active');
+                overflowOverlay.classList.remove('active');
+                overflowBtn.classList.remove('active');
+            } else {
+                overflowMenu.classList.add('active');
+                overflowOverlay.classList.add('active');
+                overflowBtn.classList.add('active');
+                this.syncOverflowMenuValues();
+            }
+        };
+
+        overflowBtn.addEventListener('click', toggleMenu);
+        overflowClose.addEventListener('click', toggleMenu);
+        overflowOverlay.addEventListener('click', toggleMenu);
+
+        // Brush Size
+        const overflowBrushSize = document.getElementById('overflow-brush-size');
+        const overflowBrushSizeValue = document.getElementById('overflow-brush-size-value');
+        const mainBrushSize = document.getElementById('brush-size');
+
+        if (overflowBrushSize && mainBrushSize) {
+            overflowBrushSize.addEventListener('input', (e) => {
+                const size = parseInt(e.target.value);
+                overflowBrushSizeValue.textContent = size;
+                mainBrushSize.value = size;
+                this.canvasManager.setWidth(size);
+                document.getElementById('brush-size-value').textContent = size;
+            });
+        }
+
+        // Theme Selector
+        const overflowTheme = document.getElementById('overflow-theme-select');
+        const mainTheme = document.getElementById('theme-select');
+
+        if (overflowTheme && mainTheme) {
+            overflowTheme.addEventListener('change', (e) => {
+                mainTheme.value = e.target.value;
+                this.canvasManager.setTheme(e.target.value);
+            });
+        }
+
+        // Canvas Color
+        const overflowCanvasColor = document.getElementById('overflow-canvas-color');
+        const mainCanvasColor = document.getElementById('canvas-color-input');
+
+        if (overflowCanvasColor && mainCanvasColor) {
+            overflowCanvasColor.addEventListener('input', (e) => {
+                mainCanvasColor.value = e.target.value;
+                this.canvasManager.setCanvasColor(e.target.value);
+            });
+
+            // Canvas color presets in overflow menu
+            const overflowMenuEl = document.getElementById('overflow-menu');
+            if (overflowMenuEl) {
+                overflowMenuEl.querySelectorAll('.canvas-color-preset').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const color = btn.dataset.canvasColor;
+                        overflowCanvasColor.value = color;
+                        mainCanvasColor.value = color;
+                        this.canvasManager.setCanvasColor(color);
+                    });
+                });
+            }
+        }
+
+        // Clear Canvas
+        const overflowClearBtn = document.getElementById('overflow-clear-canvas');
+        if (overflowClearBtn) {
+            overflowClearBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear the canvas?')) {
+                    this.canvasManager.clearCanvas();
+                    toggleMenu();
+                }
+            });
+        }
+    }
+
+    syncOverflowMenuValues() {
+        const mainBrushSize = document.getElementById('brush-size');
+        const overflowBrushSize = document.getElementById('overflow-brush-size');
+        const overflowBrushSizeValue = document.getElementById('overflow-brush-size-value');
+
+        if (mainBrushSize && overflowBrushSize) {
+            overflowBrushSize.value = mainBrushSize.value;
+            overflowBrushSizeValue.textContent = mainBrushSize.value;
+        }
+
+        const mainTheme = document.getElementById('theme-select');
+        const overflowTheme = document.getElementById('overflow-theme-select');
+
+        if (mainTheme && overflowTheme) {
+            overflowTheme.value = mainTheme.value;
+        }
+
+        const mainCanvasColor = document.getElementById('canvas-color-input');
+        const overflowCanvasColor = document.getElementById('overflow-canvas-color');
+
+        if (mainCanvasColor && overflowCanvasColor) {
+            overflowCanvasColor.value = mainCanvasColor.value;
+        }
     }
 
     setTool(tool) {

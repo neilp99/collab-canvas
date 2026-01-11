@@ -1173,6 +1173,332 @@ input[type="password"]::placeholder {
     }
 }
 
+/* ========================================
+   RESPONSIVE DESIGN - TOOLBAR OPTIMIZATION
+   ======================================== */
+
+/* Tablet: Hide non-essential elements (768px - 1024px) */
+@media (max-width: 1024px) {
+
+    /* Hide color presets to save space */
+    .color-presets {
+        display: none;
+    }
+
+    /* Hide canvas color label and presets */
+    .tool-group label {
+        display: none;
+    }
+
+    .canvas-color-presets {
+        display: none;
+    }
+
+    /* Hide theme selector */
+    .theme-selector {
+        display: none;
+    }
+
+    /* Compact brush size - hide value label */
+    #brush-size-value {
+        display: none;
+    }
+
+    /* Hide vertical dividers for cleaner look */
+    .divider-vertical {
+        display: none;
+    }
+
+    /* Reduce toolbar gap */
+    .toolbar {
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Mobile: Minimal toolbar with overflow menu (< 768px) */
+@media (max-width: 768px) {
+
+    /* Top Bar Optimizations */
+    .top-bar {
+        padding: var(--spacing-sm);
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .logo h2 {
+        font-size: 1rem;
+    }
+
+    .room-id-display {
+        font-size: 0.75rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .room-id {
+        font-size: 0.875rem;
+    }
+
+    .users-online {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.875rem;
+    }
+
+    /* Toolbar Optimizations */
+    .toolbar {
+        padding: var(--spacing-sm);
+        gap: var(--spacing-xs);
+        overflow-x: hidden;
+        /* Prevent horizontal scroll */
+        flex-wrap: nowrap;
+    }
+
+    .tool-group {
+        gap: var(--spacing-xs);
+    }
+
+    /* Hide non-essential controls on mobile */
+    .brush-size,
+    #clear-canvas-btn,
+    #canvas-color-input {
+        display: none !important;
+    }
+
+    /* Optimize tool buttons for touch */
+    .tool-btn {
+        width: 44px;
+        /* Minimum touch target size */
+        height: 44px;
+        flex-shrink: 0;
+    }
+
+    /* Make color input smaller but touchable */
+    #color-input {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Bottom Toolbar - Larger touch targets */
+    .bottom-toolbar {
+        bottom: var(--spacing-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+
+    .bottom-toolbar .tool-btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .bottom-toolbar .divider-vertical {
+        height: 24px;
+        margin: 0 var(--spacing-xs);
+    }
+
+    /* Text formatting toolbar */
+    .text-format-toolbar {
+        bottom: 70px;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+
+    .format-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Video grid on mobile */
+    .video-grid {
+        bottom: 80px;
+        right: var(--spacing-sm);
+        max-width: 150px;
+    }
+
+    .video-container video {
+        border-radius: var(--radius-sm);
+    }
+}
+
+/* Overflow Menu Styles */
+.toolbar-overflow-btn {
+    display: none;
+    /* Hidden by default, shown on mobile */
+}
+
+@media (max-width: 768px) {
+    .toolbar-overflow-btn {
+        display: inline-flex;
+        width: 44px;
+        height: 44px;
+        background: var(--bg-darker);
+        color: var(--text-secondary);
+        border: none;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        transition: all var(--transition-fast);
+        flex-shrink: 0;
+    }
+
+    .toolbar-overflow-btn:hover,
+    .toolbar-overflow-btn.active {
+        background: var(--bg-dark);
+        color: var(--text-primary);
+    }
+}
+
+/* Overflow Menu Modal */
+.overflow-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--spacing-lg);
+    transform: translateY(100%);
+    transition: transform var(--transition-base);
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.overflow-menu.active {
+    transform: translateY(0);
+}
+
+.overflow-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.overflow-menu-header h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.overflow-menu-close {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-darker);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.overflow-menu-close:hover {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+}
+
+.overflow-menu-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.overflow-menu-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.overflow-menu-item label {
+    display: block !important;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.overflow-menu-item input[type="range"] {
+    width: 100%;
+}
+
+.overflow-menu-item select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-darker);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.overflow-menu-item .color-input-wrapper {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.overflow-menu-item input[type="color"] {
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.overflow-menu-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.overflow-menu-actions button {
+    flex: 1;
+    padding: var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+}
+
+.overflow-clear-btn {
+    background: var(--bg-darker);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.overflow-clear-btn:hover {
+    background: var(--bg-dark);
+    border-color: var(--primary);
+}
+
+/* Overlay for overflow menu */
+.overflow-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+    z-index: 999;
+}
+
+.overflow-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Mobile optimization for chat */
 @media (max-width: 768px) {
     .chat-panel {
