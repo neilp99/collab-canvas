@@ -5,7 +5,7 @@ services:
     region: oregon  # or your preferred region: oregon, frankfurt, singapore, etc.
     branch: main  # Auto-deploy from main branch
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node dist/server/server.js
     autoDeploy: true  # Enable automatic deployment on git push
     envVars:
       - key: NODE_ENV

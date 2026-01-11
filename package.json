@@ -10,7 +10,7 @@
         "build": "npm run build:client && npm run build:server",
         "build:client": "vite build",
         "build:server": "tsc -p tsconfig.server.json",
-        "start": "cd .. && node dist/server/server.js || node dist/server/server.js",
+        "start": "node dist/server/server.js",
         "preview": "vite preview"
     },
     "keywords": [
@@ -25,11 +25,11 @@
         "express": "^4.18.2",
         "socket.io": "^4.6.1",
         "typescript": "^5.9.3",
-        "vite": "^5.0.0"
+        "vite": "^5.0.0",
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.0.6"
     },
     "devDependencies": {
-        "@types/express": "^5.0.6",
-        "@types/node": "^25.0.6",
         "concurrently": "^9.2.1",
         "nodemon": "^3.1.11",
         "ts-node": "^10.9.2",
