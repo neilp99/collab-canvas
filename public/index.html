@@ -124,6 +124,22 @@
             <div class="divider-vertical"></div>
 
             <div class="tool-group">
+                <button class="tool-btn" id="undo-btn" title="Undo (Ctrl+Z)" disabled>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 5L3 9L7 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M3 9H13C15.2091 9 17 10.7909 17 13C17 15.2091 15.2091 17 13 17H10"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button class="tool-btn" id="redo-btn" title="Redo (Ctrl+Y)" disabled>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M13 5L17 9L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M17 9H7C4.79086 9 3 10.7909 3 13C3 15.2091 4.79086 17 7 17H10" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
                 <button class="tool-btn" id="clear-canvas-btn" title="Clear Canvas">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path
@@ -346,6 +362,7 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/history-manager.js"></script>
     <script src="js/socket-manager.js"></script>
     <script src="js/canvas-manager.js"></script>
     <script src="js/video-manager.js"></script>

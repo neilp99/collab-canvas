@@ -1,7 +1,7 @@
 // Canvas Manager - Handles Fabric.js canvas and drawing tools
 
 class CanvasManager {
-    constructor(canvasElement, socketManager) {
+    constructor(canvasElement, socketManager, historyManager = null) {
         this.canvas = new fabric.Canvas(canvasElement, {
             isDrawingMode: true,
             freeDrawingBrush: {
@@ -11,6 +11,7 @@ class CanvasManager {
         });
 
         this.socketManager = socketManager;
+        this.historyManager = historyManager;
         this.currentTool = 'pen';
         this.currentColor = '#ff6b6b';
         this.currentWidth = 3;
@@ -223,6 +224,14 @@ class CanvasManager {
             // Send to other users
             const serialized = this.serializeObject(obj);
             this.socketManager.sendCanvasObjectAdded(serialized);
+
+            // Record in history for undo/redo
+            if (this.historyManager) {
+                this.historyManager.recordAction('ADD', {
+                    id: obj.id,
+                    data: serialized
+                });
+            }
         });
 
         // Object modified
@@ -230,8 +239,30 @@ class CanvasManager {
             if (this.isReceivingRemoteChanges) return;
 
             const obj = e.target;
+
+            // Capture previous state from the transform event
+            const previousState = obj._previousState || {};
+
             const serialized = this.serializeObject(obj);
             this.socketManager.sendCanvasObjectModified(serialized);
+
+            // Record in history for undo/redo
+            if (this.historyManager) {
+                this.historyManager.recordAction('MODIFY', {
+                    id: obj.id,
+                    previousState: previousState,
+                    newState: {
+                        left: obj.left,
+                        top: obj.top,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY,
+                        angle: obj.angle,
+                        width: obj.width,
+                        height: obj.height
+                    },
+                    data: serialized
+                });
+            }
         });
 
         // Object removed
@@ -241,6 +272,50 @@ class CanvasManager {
             const obj = e.target;
             if (obj.id) {
                 this.socketManager.sendCanvasObjectRemoved(obj.id);
+
+                // Record in history for undo/redo
+                if (this.historyManager) {
+                    const serialized = this.serializeObject(obj);
+                    this.historyManager.recordAction('REMOVE', {
+                        id: obj.id,
+                        data: serialized
+                    });
+                }
+            }
+        });
+
+        // Capture object state before modification for history
+        this.canvas.on('object:scaling', (e) => {
+            if (!e.target._previousState) {
+                e.target._previousState = {
+                    scaleX: e.transform.original.scaleX,
+                    scaleY: e.transform.original.scaleY
+                };
+            }
+        });
+
+        this.canvas.on('object:rotating', (e) => {
+            if (!e.target._previousState) {
+                e.target._previousState = {
+                    angle: e.transform.original.angle
+                };
+            }
+        });
+
+        this.canvas.on('object:moving', (e) => {
+            if (!e.target._previousState) {
+                e.target._previousState = {
+                    left: e.transform.original.left,
+                    top: e.transform.original.top
+                };
+            }
+        });
+
+        // Clear previous state after modification is complete
+        this.canvas.on('mouse:up', () => {
+            const activeObj = this.canvas.getActiveObject();
+            if (activeObj) {
+                delete activeObj._previousState;
             }
         });
 
@@ -1042,6 +1117,36 @@ class CanvasManager {
         }
 
         this.isReceivingRemoteChanges = false;
+    }
+
+    // Clear all canvas objects (local action)
+    clearCanvas() {
+        // Get all objects before clearing for undo/redo
+        const allObjects = this.canvas.getObjects().filter(obj => {
+            // Skip background and overlay
+            return obj !== this.canvas.backgroundImage && obj !== this.canvas.overlayImage;
+        });
+
+        // Record clear action in history
+        if (this.historyManager && allObjects.length > 0) {
+            const serializedObjects = allObjects.map(obj => ({
+                id: obj.id,
+                data: this.serializeObject(obj)
+            }));
+
+            this.historyManager.recordAction('CLEAR', {
+                objects: serializedObjects
+            });
+        }
+
+        // Perform the clear
+        this.isReceivingRemoteChanges = true;
+        this.canvas.clear();
+        this.applyTheme(); // Reapply current theme
+        this.isReceivingRemoteChanges = false;
+
+        // Notify other users
+        this.socketManager.sendCanvasClear();
     }
 
     // Apply remote clear

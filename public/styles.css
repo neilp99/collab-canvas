@@ -391,6 +391,17 @@ input[type="password"]::placeholder {
     transform: translateY(0);
 }
 
+.tool-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.tool-btn:disabled:hover {
+    background: var(--bg-darker);
+    transform: none;
+}
+
 .divider-vertical {
     width: 1px;
     height: 30px;

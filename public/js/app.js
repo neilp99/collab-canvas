@@ -5,6 +5,7 @@ class App {
         this.socketManager = null;
         this.canvasManager = null;
         this.videoManager = null;
+        this.historyManager = null;
         this.remoteCursors = new Map();
         this.connectedUsers = new Set(); // Track all connected users
         this.userNames = new Map(); // Store user names by userId
@@ -168,6 +169,12 @@ class App {
             this.remoteCursors.clear();
             this.roomPassword = null;
 
+            // Clear history
+            if (this.historyManager) {
+                this.historyManager.clear();
+                this.historyManager = null;
+            }
+
             // Clear UI
             document.getElementById('cursors-overlay').innerHTML = '';
             document.getElementById('video-grid').innerHTML = '';
@@ -324,8 +331,14 @@ class App {
         // Display room ID
         document.getElementById('current-room-id').textContent = roomId;
 
-        // Initialize Canvas Manager
-        this.canvasManager = new CanvasManager('main-canvas', this.socketManager);
+        // Initialize History Manager
+        this.historyManager = new HistoryManager(null, this.socketManager);
+
+        // Initialize Canvas Manager with history
+        this.canvasManager = new CanvasManager('main-canvas', this.socketManager, this.historyManager);
+
+        // Update history manager reference to canvas manager
+        this.historyManager.canvasManager = this.canvasManager;
 
         // Load existing canvas state if joining existing room
         if (canvasState) {
@@ -390,7 +403,21 @@ class App {
         // Clear canvas
         document.getElementById('clear-canvas-btn').addEventListener('click', () => {
             if (confirm('Are you sure you want to clear the canvas?')) {
-                this.canvasManager.clear();
+                this.canvasManager.clearCanvas();
+            }
+        });
+
+        // Undo button
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (this.historyManager) {
+                this.historyManager.undo();
+            }
+        });
+
+        // Redo button
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            if (this.historyManager) {
+                this.historyManager.redo();
             }
         });
 
@@ -517,6 +544,24 @@ class App {
                 return;
             }
 
+            // Undo/Redo shortcuts
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                if (this.historyManager) {
+                    this.historyManager.undo();
+                }
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                if (this.historyManager) {
+                    this.historyManager.redo();
+                }
+                return;
+            }
+
+            // Tool shortcuts
             if (e.key === 'p' || e.key === 'P') {
                 document.querySelector('[data-tool="pen"]').click();
             } else if (e.key === 'e' || e.key === 'E') {
